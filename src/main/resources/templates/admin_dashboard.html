@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="container">
+    <h1>📚 Library Admin Panel</h1>
+
+    <div class="form-row" style="margin-bottom: 25px;">
+
+        <div class="glass-card" style="flex: 1; text-align: center; padding: 15px; background: rgba(255,255,255,0.9);">
+            <h3 style="margin:0; font-size: 2.5rem; color: #6c5ce7;" th:text="${statBooks}">0</h3>
+            <p style="margin:0; font-weight:bold; color:#555;">Total Books</p>
+        </div>
+
+        <div class="glass-card" style="flex: 1; text-align: center; padding: 15px; background: rgba(255,255,255,0.9);">
+            <h3 style="margin:0; font-size: 2.5rem; color: #0984e3;" th:text="${statIssued}">0</h3>
+            <p style="margin:0; font-weight:bold; color:#555;">Active Issued</p>
+        </div>
+
+        <div class="glass-card" style="flex: 1; text-align: center; padding: 15px; background: rgba(255,255,255,0.9);">
+            <h3 style="margin:0; font-size: 2.5rem; color: #00b894;" th:text="${statStudents}">0</h3>
+            <p style="margin:0; font-weight:bold; color:#555;">Students</p>
+        </div>
+
+        <div class="glass-card" style="flex: 1; text-align: center; padding: 15px; background: rgba(255,255,255,0.9);">
+            <h3 style="margin:0; font-size: 2.5rem; color: #d63031;" th:text="'₹' + ${statFines}">0</h3>
+            <p style="margin:0; font-weight:bold; color:#555;">Total Fines</p>
+        </div>
+
+    </div>
+
+    <div class="glass-card">
+        <h3>🚀 Issue a Book</h3>
+        <form action="/admin/issue-book" method="post">
+            <div class="form-row">
+                <div class="form-group"><label>Filter Branch:</label>
+                    <select id="branchFilter" onchange="filterStudents()">
+                        <option value="">All Branches</option>
+                        <option th:each="br : ${branchList}" th:value="${br}" th:text="${br}"></option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Filter Year:</label>
+                    <select id="yearFilter" onchange="filterStudents()">
+                        <option value="">All Years</option>
+                        <option th:each="yr : ${yearList}" th:value="${yr}" th:text="${yr}"></option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Student Name:</label>
+                    <input list="studentDataList" id="studentInput" name="studentUsername" placeholder="Type Name..." required>
+                    <datalist id="studentDataList"></datalist>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Book Title:</label>
+                    <input list="bookDataList" name="bookTitle" placeholder="Type Book Name..." required>
+                    <datalist id="bookDataList">
+                        <option th:each="b : ${books}" th:if="${b.copies > 0}" th:value="${b.title}" th:text="${'Author: ' + b.author}"></option>
+                    </datalist>
+                </div>
+            </div>
+            <div class="btn-container"><button type="submit" class="btn-green">Issue Book</button></div>
+        </form>
+    </div>
+
+    <h3>📦 Book Inventory</h3>
+    <div class="table-responsive glass-table">
+        <table>
+            <thead>
+            <tr>
+                <th>Cover</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Copies</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="b : ${books}">
+                <td>
+                    <img th:if="${b.imageUrl != ''}" th:src="${b.imageUrl}" style="width:40px; height:60px; object-fit:cover; border-radius:4px;">
+                    <span th:if="${b.imageUrl == ''}">📖</span>
+                </td>
+                <td th:text="${b.title}">Java</td>
+                <td th:text="${b.author}">Gosling</td>
+                <td th:text="${b.copies}" style="font-weight:bold;">5</td>
+                <td><a th:href="@{'/admin/delete-book/' + ${b.id}}" class="btn-red">Delete</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3 style="margin-top: 30px; color: #d35400;">⚠️ Active Issued Books</h3>
+    <div class="table-responsive glass-table">
+        <table>
+            <thead>
+            <tr>
+                <th>Book</th>
+                <th>Student</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${transactions}" th:if="${t.returnDate == null}">
+                <td th:text="${t.book.title}">Java</td>
+                <td th:text="${t.student.fullName}">Rinku</td>
+
+                <td th:text="${#temporals.format(t.dueDate, 'dd-MMM-yyyy')}">Date</td>
+
+                <td>
+                    <span th:if="${t.dueDate.isBefore(#temporals.createNow())}" style="color:red; font-weight:bold;">OVERDUE!</span>
+                    <span th:if="${!t.dueDate.isBefore(#temporals.createNow())}" style="color:green;">On Time</span>
+                </td>
+
+                <td><a th:href="@{'/admin/return-book/' + ${t.id}}" class="btn-blue">Return</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-row" style="margin-top: 30px;">
+        <div class="glass-card" style="flex: 1;">
+            <h3>🎓 Register Student</h3>
+            <form action="/admin/add-student" method="post">
+                <div class="form-group"><input type="text" name="fullName" placeholder="Full Name" required></div>
+                <div class="form-group"><input type="text" name="username" placeholder="Login ID" required></div>
+                <div class="form-group"><input type="text" name="email" placeholder="Email Address" required></div> <div class="form-group"><input type="password" name="password" placeholder="Password" required></div>
+                <div class="form-group"><input type="text" name="branch" placeholder="Branch" required></div>
+                <div class="form-group"><input type="text" name="year" placeholder="Year" required></div>
+                <div class="btn-container"><button type="submit" class="btn-green">Register</button></div>
+            </form>
+        </div>
+
+        <div class="glass-card" style="flex: 1;">
+            <h3>📕 Add Book</h3>
+            <form action="/admin/add-book" method="post">
+                <div class="form-group"><input type="text" name="title" placeholder="Title" required></div>
+                <div class="form-group"><input type="text" name="author" placeholder="Author" required></div>
+                <div class="form-group"><input type="text" name="imageUrl" placeholder="Image URL (e.g. from Google)" required></div> <div class="form-group"><input type="number" name="copies" placeholder="Copies" value="5" required></div>
+                <div class="btn-container"><button type="submit" class="btn-green">Add Book</button></div>
+            </form>
+        </div>
+    </div>
+    <a href="/logout" class="logout-btn">Logout</a>
+</div>
+<div id="studentDatabase" style="display:none;">
+    <div th:each="u : ${users}" th:if="${u.role == 'ROLE_STUDENT'}"
+         th:data-username="${u.username}" th:data-fullname="${u.fullName}"
+         th:data-branch="${u.branch}" th:data-year="${u.year}">
+    </div>
+</div>
+<script>
+    window.onload = filterStudents;
+    function filterStudents() {
+        var branchFilter = document.getElementById("branchFilter").value;
+        var yearFilter = document.getElementById("yearFilter").value;
+        var dataList = document.getElementById("studentDataList");
+        var input = document.getElementById("studentInput");
+        var allStudents = document.getElementById("studentDatabase").children;
+        dataList.innerHTML = "";
+        var count = 0;
+        for (var i = 0; i < allStudents.length; i++) {
+            var s = allStudents[i];
+            var sBranch = s.getAttribute("data-branch") || "";
+            var sYear = s.getAttribute("data-year") || "";
+            if ((branchFilter === "" || sBranch === branchFilter) && (yearFilter === "" || sYear === yearFilter)) {
+                var opt = document.createElement("option");
+                opt.value = s.getAttribute("data-username");
+                opt.label = s.getAttribute("data-fullname") + " (" + sBranch + ")";
+                dataList.appendChild(opt);
+                count++;
+            }
+        }
+        input.placeholder = count === 0 ? "No students found" : "Search " + count + " students...";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+/* =========================================
+   1. GLOBAL VIBRANT BACKGROUND
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    color: #000; /* FORCE BLACK TEXT */
+    min-height: 100vh;
+    box-sizing: border-box;
+
+    /* Vibrant Gradient Animation */
+    background: linear-gradient(-45deg, #FF3CAC, #784BA0, #2B86C5);
+    background-size: 400% 400%;
+    animation: gradientBG 10s ease infinite;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* =========================================
+   2. GLASS CONTAINER & CARDS
+   ========================================= */
+.container {
+    /* Semi-transparent white to let color show through */
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 1100px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+/* Titles */
+h1 {
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 10px;
+    background: -webkit-linear-gradient(45deg, #FF3CAC, #784BA0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2.5rem;
+}
+h3 { margin-top: 0; color: #333; font-weight: 700; text-align: center; }
+
+/* Glass Inner Cards */
+.glass-card {
+    background: rgba(255, 255, 255, 0.6); /* More transparent = More colorful */
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* =========================================
+   3. INPUTS (80% Width & Black Text)
+   ========================================= */
+.form-row { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+
+.form-group {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+label {
+    width: 80%;
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #222; /* Dark Text */
+}
+
+input, select {
+    width: 80%;
+    padding: 12px;
+    border: 2px solid #ccc;
+    border-radius: 12px;
+    font-size: 1rem;
+    outline: none;
+    background: rgba(255, 255, 255, 0.9);
+    color: #000; /* Input text is Black */
+    font-weight: 500;
+    transition: 0.3s;
+    display: block;
+}
+
+input:focus, select:focus {
+    border-color: #784BA0;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(120, 75, 160, 0.2);
+}
+
+/* =========================================
+   4. BUTTONS
+   ========================================= */
+.btn-container { width: 100%; text-align: center; margin-top: 10px; }
+
+button, .btn-green, .btn-blue, .btn-red {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 50px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    width: auto;
+    min-width: 150px;
+    max-width: 80%;
+}
+
+.btn-green { background: linear-gradient(90deg, #11998e, #38ef7d); }
+.btn-blue { background: linear-gradient(90deg, #2193b0, #6dd5fa); padding: 8px 16px; font-size: 0.8rem; min-width: auto; }
+.btn-red { background: linear-gradient(90deg, #cb2d3e, #ef473a); padding: 8px 16px; font-size: 0.8rem; min-width: auto; }
+
+button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+
+/* =========================================
+   5. TABLES (Fixed Black Text)
+   ========================================= */
+/* =========================================
+   5. TABLES (Scrollable & Sticky Header)
+   ========================================= */
+.table-responsive {
+    /* 1. Limit height to show approx 3-4 rows */
+    max-height: 250px;
+
+    /* 2. Enable vertical scrolling */
+    overflow-y: auto;
+    overflow-x: auto;  /* Horizontal scroll for mobile */
+
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+th {
+    background: linear-gradient(90deg, #784BA0, #2B86C5);
+    color: white;
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+
+    /* 3. STICKY HEADER MAGIC */
+    position: sticky;
+    top: 0;
+    z-index: 10; /* Keeps header on top of scrolling rows */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #ddd;
+    color: #000;
+    font-weight: 500;
+}
+
+tr:hover { background-color: #f1f2f6; }
+
+/* Custom Scrollbar Styling (Optional - makes it look nicer) */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #784BA0;
+}
+
+/* =========================================
+   6. LOGIN & MOBILE
+   ========================================= */
+.login-body { height: 100vh; display: flex; justify-content: center; align-items: center; }
+.login-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(25px);
+    padding: 3rem;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+}
+.login-card h2 { color: #333; }
+.login-card input { margin: 0 auto 15px auto; background: white; border: 1px solid #ccc; }
+.btn-login { width: 80%; background: #784BA0; color: white; border-radius: 50px; padding: 12px; font-weight: bold; }
+
+.logout-btn { display: block; width: 150px; margin: 30px auto; background: #ff4757; color: white; text-align: center; padding: 10px; border-radius: 50px; text-decoration: none; font-weight: bold; }
+
+@media (max-width: 768px) {
+    .container { padding: 1.5rem; width: 95%; margin-top: 20px; }
+    .form-row { flex-direction: column; }
+    input, select, label { width: 90%; }
+}

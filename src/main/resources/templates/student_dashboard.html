@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="container">
+    <h1>🎓 Student Portal</h1>
+    <h3 style="color:#444; font-weight:400; margin-bottom: 20px;">Welcome, <span th:text="${user.fullName}" style="font-weight:700;">Student</span></h3>
+
+    <div th:each="t : ${myBooks}" th:if="${t.fine > 0.0 and t.returnDate == null}"
+         style="background: #ffebee; border: 1px solid #ffcdd2; color: #b71c1c; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+        ⚠️ <strong>Alert:</strong> You have a pending fine of
+        <span th:text="'₹' + ${t.fine}"></span> for
+        <span th:text="${t.book.title}"></span>. Please return it immediately!
+    </div>
+
+    <div class="glass-card">
+        <h3>📚 My Issued Books</h3>
+        <div class="table-responsive glass-table">
+            <table>
+                <thead>
+                <tr>
+                    <th>Cover</th>
+                    <th>Book Title</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th> <th>Fine</th>     <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t : ${myBooks}">
+                    <td>
+                        <img th:if="${t.book.imageUrl != null && t.book.imageUrl != ''}"
+                             th:src="${t.book.imageUrl}"
+                             style="width:40px; height:60px; object-fit:cover; border-radius:4px;">
+                        <span th:if="${t.book.imageUrl == null || t.book.imageUrl == ''}">📖</span>
+                    </td>
+
+                    <td th:text="${t.book.title}">Java</td>
+
+                    <td th:text="${#temporals.format(t.issueDate, 'dd-MMM')}">Date</td>
+
+                    <td th:text="${#temporals.format(t.dueDate, 'dd-MMM-yyyy')}"
+                        th:style="${t.returnDate == null && t.dueDate.isBefore(#temporals.createNow())} ? 'color:red; font-weight:bold;' : 'color:black;'">
+                    </td>
+
+                    <td>
+                        <span th:if="${t.fine > 0}" th:text="'₹' + ${t.fine}" style="color:red; font-weight:bold;"></span>
+                        <span th:if="${t.fine == 0 || t.fine == null}">-</span>
+                    </td>
+
+                    <td>
+                        <span th:if="${t.returnDate != null}" style="color:green; font-weight:bold;">✔ Returned</span>
+                        <span th:if="${t.returnDate == null && t.dueDate.isBefore(#temporals.createNow())}" style="color:red; font-weight:bold;">⚠️ Overdue</span>
+                        <span th:if="${t.returnDate == null && !t.dueDate.isBefore(#temporals.createNow())}" style="color:blue;">Active</span>
+                    </td>
+
+                    <td>
+                        <a th:if="${t.returnDate == null}"
+                           th:href="@{'/student/return-book/' + ${t.id}}"
+                           class="btn-red"
+                           onclick="return confirm('Return this book?')">
+                            Return
+                        </a>
+                        <span th:if="${t.returnDate != null}">-</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(myBooks)}">
+                    <td colspan="7" style="text-align:center;">No books found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <a href="/logout" class="logout-btn">Logout</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Register Admin</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="login-body"> <div class="login-card">
+    <h2 style="color: #784BA0;">🛡️ Add Admin</h2>
+    <p style="margin-bottom: 20px;">Create a new administrative account</p>
+
+    <form action="/save-admin" method="post">
+
+        <div th:if="${param.error}" style="color: red; margin-bottom: 10px;">
+            Username already exists!
+        </div>
+
+        <input type="text" name="fullName" placeholder="Full Name" required style="margin: 0 auto 15px auto;">
+        <input type="text" name="username" placeholder="New Username" required style="margin: 0 auto 15px auto;">
+        <input type="password" name="password" placeholder="New Password" required style="margin: 0 auto 15px auto;">
+
+        <button type="submit" class="btn-green" style="width: 80%; margin: 10px auto; display:block;">Create Admin</button>
+    </form>
+
+    <div style="margin-top: 20px; font-size: 0.9rem;">
+        <a href="/login" style="color: #555; text-decoration: none;">
+            ← Back to Login
+        </a>
+    </div>
+</div>
+</body>
+</html>

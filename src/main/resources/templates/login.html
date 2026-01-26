@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Library Login</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="login-body">
+<div class="login-card">
+    <h2>📚 Library Login</h2>
+    <p style="margin-bottom: 20px;">Please enter your credentials</p>
+
+    <form th:action="@{/login}" method="post">
+        <div th:if="${param.error}" style="background: rgba(255,0,0,0.2); color: red; padding: 10px; border-radius: 10px; margin-bottom: 15px;">
+            Invalid Username or Password
+        </div>
+        <div th:if="${param.registered}" style="background: rgba(0,255,0,0.2); color: green; padding: 10px; border-radius: 10px; margin-bottom: 15px;">
+            Admin Registered! Please Login.
+        </div>
+
+        <input type="text" name="username" placeholder="Username" required style="margin: 0 auto 15px auto;">
+        <input type="password" name="password" placeholder="Password" required style="margin: 0 auto 15px auto;">
+
+        <button type="submit" class="btn-login" style="margin: 10px auto; display:block;">Sign In</button>
+    </form>
+
+    <div style="margin-top: 20px; font-size: 0.9rem;">
+        <a href="/register-admin" style="color: #784BA0; text-decoration: none; font-weight: bold;">
+            ➕ Create New Admin
+        </a>
+    </div>
+</div>
+</body>
+</html>
