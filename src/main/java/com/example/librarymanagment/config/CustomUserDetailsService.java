@@ -24,11 +24,16 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found: " + username);
         }
 
+        String role = user.getRole();
+        if (role == null || role.isBlank()) {
+            role = "ROLE_STUDENT";
+        }
+
         // Spring Security ke format mein user return karna
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword()) // Ye already encoded hai
-                .roles(user.getRole().replace("ROLE_", "")) // "ROLE_ADMIN" -> "ADMIN"
+                .roles(role.replace("ROLE_", "")) // "ROLE_ADMIN" -> "ADMIN"
                 .build();
     }
 }

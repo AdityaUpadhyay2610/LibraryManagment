@@ -31,3 +31,19 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Database files (H2 Fallback) ###
+*.db
+
+### Logs ###
+*.log
+
+### React compiled build output in Spring Boot ###
+src/main/resources/static/assets/
+src/main/resources/static/index.html
+
+### Secrets and Sensitive Configuration ###
+src/main/resources/application-secret.properties
+.env
+*.env
+
