@@ -14,6 +14,7 @@ WORKDIR /app
 RUN apk add --no-cache bash
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
+RUN chmod +x mvnw
 # Prefetch dependencies to speed up subsequent builds
 RUN ./mvnw dependency:go-offline -B
 # Copy backend source code
