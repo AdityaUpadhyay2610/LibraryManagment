@@ -2,10 +2,16 @@ import { useState, useEffect } from 'react';
 import { authApi, adminApi, studentApi } from './api';
 
 export default function App() {
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'register-admin'
   const [roleMode, setRoleMode] = useState('admin'); // 'admin' | 'student'
+
+  useEffect(() => {
+    document.documentElement.className = `theme-${theme}`;
+    localStorage.setItem('theme', theme);
+  }, [theme]);
   
   // Form States
   const [username, setUsername] = useState('');
@@ -248,13 +254,28 @@ export default function App() {
 
   // Helper book cover renderer
   const renderBookCover = (title, author, url) => {
-    if (url && url.trim().startsWith('http')) {
-      return <img src={url} alt={title} className="book-cover-img" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />;
-    }
+    const hasUrl = url && url.trim().startsWith('http');
     return (
-      <div className="book-cover-placeholder">
-        <span className="cover-icon">📖</span>
-        <span className="cover-title">{title}</span>
+      <div className="book-cover-wrapper-inner" style={{ position: 'relative', width: '100%', height: '100%', display: 'flex' }}>
+        {hasUrl && (
+          <img 
+            src={url} 
+            alt={title} 
+            className="book-cover-img" 
+            onError={(e) => { 
+              e.target.style.display = 'none'; 
+              const placeholder = e.target.parentNode.querySelector('.book-cover-placeholder');
+              if (placeholder) placeholder.style.display = 'flex';
+            }} 
+          />
+        )}
+        <div 
+          className="book-cover-placeholder" 
+          style={{ display: hasUrl ? 'none' : 'flex' }}
+        >
+          <span className="cover-icon">📖</span>
+          <span className="cover-title">{title}</span>
+        </div>
       </div>
     );
   };
@@ -284,6 +305,13 @@ export default function App() {
     return (
       <div className="auth-container">
         {renderToast()}
+        <button 
+          className="theme-toggle-floating"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title="Toggle Theme"
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
         
         <div className="auth-decorations">
           <div className="decor-blob blob-1"></div>
@@ -469,9 +497,18 @@ export default function App() {
         <main className="workspace">
           <header className="workspace-header">
             <h2>{adminTab.charAt(0).toUpperCase() + adminTab.slice(1)} Workspace</h2>
-            <div className="system-status">
-              <span className="status-dot green"></span>
-              MySQL Database Connected
+            <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button 
+                className="theme-toggle-btn"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                title="Toggle Theme"
+              >
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
+              <div className="system-status">
+                <span className="status-dot green"></span>
+                MySQL Connected
+              </div>
             </div>
           </header>
 
@@ -919,6 +956,14 @@ export default function App() {
           </nav>
 
           <div className="student-profile-summary">
+            <button 
+              className="theme-toggle-btn"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              style={{ marginRight: '8px' }}
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <div className="student-meta">
               <span className="badge badge-warning">{studentData.user?.branch}</span>
               <span className="badge badge-success">{studentData.user?.year}</span>
