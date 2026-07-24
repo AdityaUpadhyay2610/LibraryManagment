@@ -74,7 +74,7 @@ function AdminDashboardContent() {
             <div className="flex items-center justify-between">
               {/* Time Block */}
               <div className="flex items-baseline font-mono select-none">
-                <span className="text-2xl font-bold tracking-tight text-white">{hours}:{minutes}</span>
+                <span className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-main)' }}>{hours}:{minutes}</span>
                 <span className="text-[10px] text-muted font-semibold ml-0.5 self-end mb-0.5">{seconds}</span>
                 <span className="text-[10px] font-extrabold uppercase ml-1.5" style={{ color: 'var(--primary)', textShadow: '0 0 6px var(--primary-glow)' }}>{ampm}</span>
               </div>
@@ -82,7 +82,7 @@ function AdminDashboardContent() {
               {/* Date Block */}
               <div className="flex flex-col items-end text-right leading-none select-none text-[10px] text-muted">
                 <span className="font-semibold">{dayOfWeek},</span>
-                <span className="font-bold mt-0.5 text-white flex items-center gap-0.5">
+                <span className="font-bold mt-0.5 flex items-center gap-0.5" style={{ color: 'var(--text-main)' }}>
                   <span className="text-xs">📅</span> {dateMonth}
                 </span>
               </div>
@@ -95,12 +95,12 @@ function AdminDashboardContent() {
             <div className="flex items-center justify-between">
               {/* Weather Status */}
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-black/25 border border-white/5 flex items-center justify-center text-lg shadow-inner">
+                <div className="w-8 h-8 rounded-lg border border-white/5 flex items-center justify-center text-lg shadow-inner" style={{ background: 'var(--input-bg)' }}>
                   {weatherIcon}
                 </div>
                 <div className="flex flex-col select-none leading-tight">
                   <span className="text-[9px] text-muted">Temp</span>
-                  <span className="text-[10px] font-bold text-white whitespace-nowrap">
+                  <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: 'var(--text-main)' }}>
                     {temp !== null ? `${temp}°C` : '--°C'} {weatherCondition}
                   </span>
                 </div>
