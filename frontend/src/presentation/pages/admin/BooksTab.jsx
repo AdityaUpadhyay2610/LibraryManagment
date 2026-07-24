@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
 import { BookCover } from '../../components/BookCover';
 import { DEFAULT_NEW_BOOK } from '../../../domain/constants';
 
 export function BooksTab() {
-  const { adminData, addBook, deleteBook } = useAdmin();
+  const { adminData, addBook, deleteBook, fetchAdminData } = useAdmin();
   const [newBook, setNewBook] = useState(DEFAULT_NEW_BOOK);
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

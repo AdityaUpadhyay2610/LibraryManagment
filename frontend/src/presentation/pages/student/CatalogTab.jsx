@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStudent } from '../../../application/hooks/useStudent';
 import { BookCover } from '../../components/BookCover';
 
 export function CatalogTab() {
-  const { studentData } = useStudent();
+  const { studentData, fetchStudentData } = useStudent();
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchStudentData();
+  }, [fetchStudentData]);
 
   const filteredCatalog = studentData.catalog.filter(b => 
     b.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 

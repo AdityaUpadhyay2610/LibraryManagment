@@ -1,9 +1,14 @@
+import { useEffect } from 'react';
 import { useStudent } from '../../../application/hooks/useStudent';
 import { BookCover } from '../../components/BookCover';
 import { formatDate } from '../../../services/utils';
 
 export function MyBooksTab() {
-  const { studentData, returnBook } = useStudent();
+  const { studentData, returnBook, fetchStudentData } = useStudent();
+
+  useEffect(() => {
+    fetchStudentData();
+  }, [fetchStudentData]);
 
   return (
     <div className="glass-panel">

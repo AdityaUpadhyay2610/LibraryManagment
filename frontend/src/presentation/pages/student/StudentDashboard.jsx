@@ -1,13 +1,12 @@
+import { Outlet, NavLink } from 'react-router';
 import { useAuth } from '../../../application/hooks/useAuth';
 import { useStudent } from '../../../application/hooks/useStudent';
 import { StudentProvider } from '../../../application/contexts/StudentContext';
 import { Toast } from '../../components/Toast';
-import { MyBooksTab } from './MyBooksTab';
-import { CatalogTab } from './CatalogTab';
 
 function StudentDashboardContent() {
   const { user, logout, theme, toggleTheme } = useAuth();
-  const { studentTab, setStudentTab, studentData } = useStudent();
+  const { studentData } = useStudent();
 
   return (
     <div className="student-dashboard-layout animate-fade-in">
@@ -24,20 +23,18 @@ function StudentDashboardContent() {
         </div>
         
         <nav className="student-nav">
-          <button 
-            type="button"
-            className={`student-nav-btn ${studentTab === 'mybooks' ? 'active' : ''}`}
-            onClick={() => setStudentTab('mybooks')}
+          <NavLink 
+            to="/student/mybooks"
+            className={({ isActive }) => `student-nav-btn ${isActive ? 'active' : ''}`}
           >
             📖 My Issued Books ({studentData.myBooks?.filter(t => !t.returnDate).length || 0})
-          </button>
-          <button 
-            type="button"
-            className={`student-nav-btn ${studentTab === 'catalog' ? 'active' : ''}`}
-            onClick={() => setStudentTab('catalog')}
+          </NavLink>
+          <NavLink 
+            to="/student/catalog"
+            className={({ isActive }) => `student-nav-btn ${isActive ? 'active' : ''}`}
           >
             🔍 Search Book Catalog
-          </button>
+          </NavLink>
         </nav>
 
         <div className="student-profile-summary">
@@ -66,8 +63,7 @@ function StudentDashboardContent() {
 
       {/* Content container */}
       <main className="student-content animate-fade-in mt-6">
-        {studentTab === 'mybooks' && <MyBooksTab />}
-        {studentTab === 'catalog' && <CatalogTab />}
+        <Outlet />
       </main>
     </div>
   );

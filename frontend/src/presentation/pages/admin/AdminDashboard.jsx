@@ -1,16 +1,14 @@
+import { Outlet, NavLink, useLocation } from 'react-router';
 import { useAuth } from '../../../application/hooks/useAuth';
-import { useAdmin } from '../../../application/hooks/useAdmin';
 import { AdminProvider } from '../../../application/contexts/AdminContext';
 import { Toast } from '../../components/Toast';
-import { OverviewTab } from './OverviewTab';
-import { BooksTab } from './BooksTab';
-import { StudentsTab } from './StudentsTab';
-import { IssueBookTab } from './IssueBookTab';
-import { TransactionsTab } from './TransactionsTab';
 
 function AdminDashboardContent() {
   const { user, logout, theme, toggleTheme } = useAuth();
-  const { adminTab, setAdminTab } = useAdmin();
+  const location = useLocation();
+
+  // Extract active page from pathname (e.g., /admin/overview -> overview)
+  const currentTab = location.pathname.split('/').pop() || 'overview';
 
   return (
     <div className="dashboard-layout animate-fade-in">
@@ -27,41 +25,36 @@ function AdminDashboardContent() {
         </div>
         
         <nav className="sidebar-nav">
-          <button 
-            type="button"
-            className={`nav-link ${adminTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setAdminTab('overview')}
+          <NavLink 
+            to="/admin/overview"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             📊 Overview
-          </button>
-          <button 
-            type="button"
-            className={`nav-link ${adminTab === 'books' ? 'active' : ''}`}
-            onClick={() => setAdminTab('books')}
+          </NavLink>
+          <NavLink 
+            to="/admin/books"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             📖 Book Repository
-          </button>
-          <button 
-            type="button"
-            className={`nav-link ${adminTab === 'students' ? 'active' : ''}`}
-            onClick={() => setAdminTab('students')}
+          </NavLink>
+          <NavLink 
+            to="/admin/students"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             👥 Students List
-          </button>
-          <button 
-            type="button"
-            className={`nav-link ${adminTab === 'issue' ? 'active' : ''}`}
-            onClick={() => setAdminTab('issue')}
+          </NavLink>
+          <NavLink 
+            to="/admin/issue"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             ⚡ Issue Book
-          </button>
-          <button 
-            type="button"
-            className={`nav-link ${adminTab === 'transactions' ? 'active' : ''}`}
-            onClick={() => setAdminTab('transactions')}
+          </NavLink>
+          <NavLink 
+            to="/admin/transactions"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             ⏳ Log/Transactions
-          </button>
+          </NavLink>
         </nav>
 
         <div className="sidebar-footer">
@@ -85,7 +78,7 @@ function AdminDashboardContent() {
       {/* Main Workspace */}
       <main className="workspace">
         <header className="workspace-header">
-          <h2>{adminTab.charAt(0).toUpperCase() + adminTab.slice(1)} Workspace</h2>
+          <h2>{currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} Workspace</h2>
           <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button 
               type="button"
@@ -103,11 +96,7 @@ function AdminDashboardContent() {
         </header>
 
         <div className="workspace-content animate-fade-in">
-          {adminTab === 'overview' && <OverviewTab />}
-          {adminTab === 'books' && <BooksTab />}
-          {adminTab === 'students' && <StudentsTab />}
-          {adminTab === 'issue' && <IssueBookTab />}
-          {adminTab === 'transactions' && <TransactionsTab />}
+          <Outlet />
         </div>
       </main>
     </div>

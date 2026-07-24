@@ -1,8 +1,13 @@
+import { useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
 import { formatDate } from '../../../services/utils';
 
 export function TransactionsTab() {
-  const { adminData, returnBook } = useAdmin();
+  const { adminData, returnBook, fetchAdminData } = useAdmin();
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   return (
     <div className="tab-pane">

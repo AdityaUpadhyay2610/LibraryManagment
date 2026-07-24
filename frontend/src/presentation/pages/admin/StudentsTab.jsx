@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
 import { BRANCH_OPTIONS, YEAR_OPTIONS, DEFAULT_NEW_STUDENT } from '../../../domain/constants';
 
 export function StudentsTab() {
-  const { adminData, addStudent } = useAdmin();
+  const { adminData, addStudent, fetchAdminData } = useAdmin();
   const [newStudent, setNewStudent] = useState(DEFAULT_NEW_STUDENT);
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

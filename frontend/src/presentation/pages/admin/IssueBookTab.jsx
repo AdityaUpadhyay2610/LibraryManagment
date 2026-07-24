@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
 import { DEFAULT_ISSUE_PAYLOAD } from '../../../domain/constants';
 
 export function IssueBookTab() {
-  const { adminData, issueBook } = useAdmin();
+  const { adminData, issueBook, fetchAdminData } = useAdmin();
   const [payload, setPayload] = useState(DEFAULT_ISSUE_PAYLOAD);
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

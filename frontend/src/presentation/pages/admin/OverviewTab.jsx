@@ -1,8 +1,13 @@
+import { useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
 import { formatDate } from '../../../services/utils';
 
 export function OverviewTab() {
-  const { adminData } = useAdmin();
+  const { adminData, fetchAdminData } = useAdmin();
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
 
   return (
     <div className="tab-pane">
