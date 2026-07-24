@@ -1,0 +1,49 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Database files (H2 Fallback) ###
+*.db
+
+### Logs ###
+*.log
+
+### React compiled build output in Spring Boot ###
+src/main/resources/static/assets/
+src/main/resources/static/index.html
+
+### Secrets and Sensitive Configuration ###
+src/main/resources/application-secret.properties
+.env
+*.env
+
