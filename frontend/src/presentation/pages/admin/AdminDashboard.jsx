@@ -28,18 +28,6 @@ function AdminDashboardContent() {
             <p>Admin Control</p>
           </div>
         </div>
-
-        {/* Live Weather & Time Panel */}
-        <div className="px-4 py-2.5 mb-5 bg-black/15 border border-orange-500/10 rounded-lg flex items-center justify-between text-xs backdrop-blur-sm select-none">
-          <div className="flex flex-col">
-            <span className="font-semibold text-orange-500 tracking-wide">{formattedTime}</span>
-            <span className="text-muted mt-0.5">{formattedDate}</span>
-          </div>
-          <div className="flex items-center gap-1 font-bold text-secondary">
-            <span>🌡️</span>
-            <span>{temp !== null ? `${temp}°C` : '--°C'}</span>
-          </div>
-        </div>
         
         <nav className="sidebar-nav">
           <NavLink 
@@ -75,6 +63,22 @@ function AdminDashboardContent() {
         </nav>
 
         <div className="sidebar-footer">
+          {/* Live Weather & Time Panel */}
+          <div className="glass-panel mb-4 select-none flex items-center justify-between text-xs" style={{ padding: '10px 14px', borderRadius: '12px 3px' }}>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-semibold text-[13px] tracking-wide" style={{ color: 'var(--primary)', textShadow: '0 0 8px var(--primary-glow)' }}>
+                {formattedTime}
+              </span>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                {formattedDate}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 font-bold text-[11px]" style={{ color: 'var(--secondary)' }}>
+              <span>🌡️</span>
+              <span>{temp !== null ? `${temp}°C` : '--°C'}</span>
+            </div>
+          </div>
+
           <div className="user-profile-badge">
             <div className="avatar">🛡️</div>
             <div className="profile-details">
