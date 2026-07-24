@@ -6,14 +6,19 @@ import { Toast } from '../../components/Toast';
 
 function AdminDashboardContent() {
   const { user, logout, theme, toggleTheme } = useAuth();
-  const { time, temp } = useWeatherAndClock();
+  const { time, temp, weatherCondition, weatherIcon, locationName, refreshWeather } = useWeatherAndClock();
   const location = useLocation();
 
   // Extract active page from pathname (e.g., /admin/overview -> overview)
   const currentTab = location.pathname.split('/').pop() || 'overview';
 
-  const formattedTime = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-  const formattedDate = time.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' });
+  const hourVal = time.getHours() % 12 || 12;
+  const hours = hourVal.toString().padStart(2, '0');
+  const minutes = time.getMinutes().toString().padStart(2, '0');
+  const seconds = time.getSeconds().toString().padStart(2, '0');
+  const ampm = time.getHours() >= 12 ? 'PM' : 'AM';
+  const dayOfWeek = time.toLocaleDateString('en-US', { weekday: 'short' });
+  const dateMonth = time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (
     <div className="dashboard-layout animate-fade-in">
@@ -63,19 +68,58 @@ function AdminDashboardContent() {
         </nav>
 
         <div className="sidebar-footer">
-          {/* Live Weather & Time Panel */}
-          <div className="glass-panel mb-4 select-none flex items-center justify-between text-xs" style={{ padding: '10px 14px', borderRadius: '12px 3px' }}>
-            <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-[13px] tracking-wide" style={{ color: 'var(--primary)', textShadow: '0 0 8px var(--primary-glow)' }}>
-                {formattedTime}
-              </span>
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                {formattedDate}
-              </span>
+          {/* Live Weather & Time Panel (Mockup Replicated) */}
+          <div className="glass-panel mb-5 select-none flex flex-col" style={{ padding: '12px 14px', borderRadius: '16px' }}>
+            {/* Top Row: Time and Date */}
+            <div className="flex items-center justify-between">
+              {/* Time Block */}
+              <div className="flex items-baseline font-mono select-none">
+                <span className="text-2xl font-bold tracking-tight text-white">{hours}:{minutes}</span>
+                <span className="text-[10px] text-muted font-semibold ml-0.5 self-end mb-0.5">{seconds}</span>
+                <span className="text-[10px] font-extrabold uppercase ml-1.5" style={{ color: 'var(--primary)', textShadow: '0 0 6px var(--primary-glow)' }}>{ampm}</span>
+              </div>
+
+              {/* Date Block */}
+              <div className="flex flex-col items-end text-right leading-none select-none text-[10px] text-muted">
+                <span className="font-semibold">{dayOfWeek},</span>
+                <span className="font-bold mt-0.5 text-white flex items-center gap-0.5">
+                  <span className="text-xs">📅</span> {dateMonth}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 font-bold text-[11px]" style={{ color: 'var(--secondary)' }}>
-              <span>🌡️</span>
-              <span>{temp !== null ? `${temp}°C` : '--°C'}</span>
+
+            {/* Separator line */}
+            <hr className="my-2 border-t border-dashed" style={{ borderColor: 'var(--border-color)', opacity: 0.2 }} />
+
+            {/* Bottom Row: Weather and Geolocation */}
+            <div className="flex items-center justify-between">
+              {/* Weather Status */}
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-black/25 border border-white/5 flex items-center justify-center text-lg shadow-inner">
+                  {weatherIcon}
+                </div>
+                <div className="flex flex-col select-none leading-tight">
+                  <span className="text-[9px] text-muted">Temp</span>
+                  <span className="text-[10px] font-bold text-white whitespace-nowrap">
+                    {temp !== null ? `${temp}°C` : '--°C'} {weatherCondition}
+                  </span>
+                </div>
+              </div>
+
+              {/* Geolocation and Manual Refresh */}
+              <div className="flex flex-col items-end text-right select-none leading-none">
+                <span className="text-[9px] text-muted font-medium flex items-center gap-0.5 max-w-[80px] truncate" title={locationName}>
+                  <span>📍</span> {locationName}
+                </span>
+                <button 
+                  type="button" 
+                  onClick={refreshWeather}
+                  className="mt-1.5 text-[10px] text-muted hover:text-primary transition-colors flex items-center justify-center p-0.5 hover:bg-white/5 rounded"
+                  title="Refresh Weather"
+                >
+                  <span className="text-xs">🔄</span>
+                </button>
+              </div>
             </div>
           </div>
 
