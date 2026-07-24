@@ -1461,15 +1461,24 @@ select.form-input option {
     flex-direction: column;
   }
   .sidebar {
-    width: 100%;
-    position: relative;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    width: 280px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-right: 1px solid var(--border-color);
+    border-bottom: none;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+  .sidebar.open {
+    transform: translateX(0);
   }
   .workspace {
     margin-left: 0;
-    padding: 30px 20px;
+    padding: 80px 16px 30px;
+    width: 100%;
   }
   .student-header {
     flex-direction: column;
