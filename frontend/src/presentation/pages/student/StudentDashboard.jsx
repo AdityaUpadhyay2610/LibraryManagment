@@ -1,12 +1,17 @@
 import { Outlet, NavLink } from 'react-router';
 import { useAuth } from '../../../application/hooks/useAuth';
 import { useStudent } from '../../../application/hooks/useStudent';
+import { useWeatherAndClock } from '../../../application/hooks/useWeatherAndClock';
 import { StudentProvider } from '../../../application/contexts/StudentContext';
 import { Toast } from '../../components/Toast';
 
 function StudentDashboardContent() {
   const { user, logout, theme, toggleTheme } = useAuth();
   const { studentData } = useStudent();
+  const { time, temp } = useWeatherAndClock();
+
+  const formattedTime = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const formattedDate = time.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 
   return (
     <div className="student-dashboard-layout animate-fade-in">
@@ -38,6 +43,14 @@ function StudentDashboardContent() {
         </nav>
 
         <div className="student-profile-summary">
+          {/* Live Weather & Time */}
+          <div className="flex flex-col items-end text-xs mr-4 select-none leading-tight">
+            <span className="font-semibold text-orange-500 tracking-wide">{formattedTime}</span>
+            <span className="text-[10px] text-muted mt-0.5 opacity-80">
+              {temp !== null ? `🌡️ ${temp}°C` : '🌡️ --°C'} | {formattedDate}
+            </span>
+          </div>
+
           <button 
             type="button"
             className="theme-toggle-btn"

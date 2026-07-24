@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
+import { useWeatherAndClock } from '../../../application/hooks/useWeatherAndClock';
 import { DEFAULT_ISSUE_PAYLOAD } from '../../../domain/constants';
 
 export function IssueBookTab() {
   const { adminData, issueBook, fetchAdminData } = useAdmin();
   const [payload, setPayload] = useState(DEFAULT_ISSUE_PAYLOAD);
+  const { time } = useWeatherAndClock();
 
   useEffect(() => {
     fetchAdminData();
   }, [fetchAdminData]);
+
+  const formattedTime = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const formattedDate = time.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,6 +33,11 @@ export function IssueBookTab() {
       <div className="glass-panel max-w-2xl mx-auto">
         <h3>Issue Book to Student</h3>
         <p className="text-muted text-sm mt-1">This registers a book loan transaction and generates automated email notifications.</p>
+        
+        <div className="mt-3 p-3 bg-black/15 border border-orange-500/10 rounded flex justify-between items-center text-xs text-muted select-none">
+          <span>Transaction System Timestamp:</span>
+          <span className="font-semibold text-orange-500">{formattedDate} | {formattedTime}</span>
+        </div>
         
         <form onSubmit={handleSubmit} className="mt-6">
           <div className="form-group">
@@ -61,7 +71,7 @@ export function IssueBookTab() {
           </div>
 
           <button type="submit" className="btn btn-primary w-full mt-6">
-            Proceed and Issue Book
+            Proceed and Issue Book (at {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
           </button>
         </form>
       </div>

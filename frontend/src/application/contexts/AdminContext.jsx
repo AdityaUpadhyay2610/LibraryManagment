@@ -75,7 +75,7 @@ export function AdminProvider({ children }) {
   const issueBook = async (studentUsername, bookTitle) => {
     try {
       await adminApi.issueBook(studentUsername, bookTitle);
-      showToast('Book issued successfully!');
+      showToast(`Book issued successfully at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}!`);
       await fetchAdminData();
     } catch (err) {
       showToast('Error issuing book: ' + err.message, 'error');

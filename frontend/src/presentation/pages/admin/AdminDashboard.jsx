@@ -1,14 +1,19 @@
 import { Outlet, NavLink, useLocation } from 'react-router';
 import { useAuth } from '../../../application/hooks/useAuth';
+import { useWeatherAndClock } from '../../../application/hooks/useWeatherAndClock';
 import { AdminProvider } from '../../../application/contexts/AdminContext';
 import { Toast } from '../../components/Toast';
 
 function AdminDashboardContent() {
   const { user, logout, theme, toggleTheme } = useAuth();
+  const { time, temp } = useWeatherAndClock();
   const location = useLocation();
 
   // Extract active page from pathname (e.g., /admin/overview -> overview)
   const currentTab = location.pathname.split('/').pop() || 'overview';
+
+  const formattedTime = time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const formattedDate = time.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' });
 
   return (
     <div className="dashboard-layout animate-fade-in">
@@ -21,6 +26,18 @@ function AdminDashboardContent() {
           <div>
             <h3>Bibliotech</h3>
             <p>Admin Control</p>
+          </div>
+        </div>
+
+        {/* Live Weather & Time Panel */}
+        <div className="px-4 py-2.5 mb-5 bg-black/15 border border-orange-500/10 rounded-lg flex items-center justify-between text-xs backdrop-blur-sm select-none">
+          <div className="flex flex-col">
+            <span className="font-semibold text-orange-500 tracking-wide">{formattedTime}</span>
+            <span className="text-muted mt-0.5">{formattedDate}</span>
+          </div>
+          <div className="flex items-center gap-1 font-bold text-secondary">
+            <span>🌡️</span>
+            <span>{temp !== null ? `${temp}°C` : '--°C'}</span>
           </div>
         </div>
         
