@@ -99,7 +99,7 @@ function AdminDashboardContent() {
         </nav>
 
         {/* Live Weather & Time Panel (Mockup Replicated - Outside of footer!) */}
-        <div className="glass-panel mb-5 select-none flex flex-col" style={{ padding: '12px 14px', borderRadius: '16px' }}>
+        <div className="glass-panel mb-5 select-none flex flex-col" style={{ padding: '12px 14px', borderRadius: '16px', marginTop: 'auto' }}>
           {/* Top Row: Time and Date */}
           <div className="flex items-center justify-between">
             {/* Time Block */}
