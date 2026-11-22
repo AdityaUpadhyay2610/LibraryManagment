@@ -5,14 +5,29 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Environment and sensitive credentials
+# Environment and sensitive credentials (never commit real credentials)
 .env
+.env.*
 *.env
+!.env.example
 backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
-# Build outputs
+# Build and distribution outputs
 dist/
+build/
 frontend/dist/
+
+# Local databases and temp files
+*.db
+*.sqlite
+*.sqlite3
+*.mv.db
+*.trace.db
 
 # Logs
 *.log
