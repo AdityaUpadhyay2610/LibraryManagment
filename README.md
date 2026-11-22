@@ -214,8 +214,8 @@ npm run db:init
 ```
 
 *Default Seed Credentials:*
-- **Administrator**: `admin_user` / `admin123`
-- **Student**: `student_rahul` / `student123`
+- **Administrator**: `YOUR DEFAULT ADMIN ID AND PASSWORD`
+- **Student**: `YOUR DEFAULT STUDENT ID AND PASSWORD`
 
 ### 2. Start Backend Server
 ```bash
@@ -362,8 +362,8 @@ Authenticates user credentials and establishes a session.
 - **Request Body**:
   ```json
   {
-    "username": "admin_user",
-    "password": "admin123"
+    "username": "ADMIN",
+    "password": "PASSWORD"
   }
   ```
 - **Response `200 OK`**:
