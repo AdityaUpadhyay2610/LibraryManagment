@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "cd ../frontend && npm install && npm run build",
     "dev": "nodemon server.js",
     "db:init": "node db/seed.js",
     "db:migrate-mysql": "node db/migrateFromMySql.js",

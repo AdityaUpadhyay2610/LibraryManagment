@@ -1,0 +1,12 @@
+{
+  "name": "library-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production Library Management System - Node.js, Express, PostgreSQL & React",
+  "scripts": {
+    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
+    "start": "node backend/server.js",
+    "db:init": "node backend/db/seed.js",
+    "test": "npm test --prefix backend"
+  }
+}

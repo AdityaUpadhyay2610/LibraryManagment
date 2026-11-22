@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: library-management-system
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: LOAN_DAYS
+        value: "7"
+      - key: FINE_PER_DAY
+        value: "10"
+      - key: MAX_BOOKS_PER_STUDENT
+        value: "3"
