@@ -94,6 +94,63 @@ export function AdminProvider({ children }) {
     }
   };
 
+  const editStudent = async (id, studentData) => {
+    try {
+      const res = await adminApi.editStudent(id, studentData);
+      showToast(res.message || 'Student updated successfully!');
+      await fetchAdminData();
+    } catch (err) {
+      showToast('Error updating student: ' + err.message, 'error');
+      throw err;
+    }
+  };
+
+  const resetStudentPassword = async (id, newPassword) => {
+    try {
+      const res = await adminApi.resetStudentPassword(id, newPassword);
+      showToast(res.message || 'Password reset successfully!');
+      await fetchAdminData();
+    } catch (err) {
+      showToast('Error resetting password: ' + err.message, 'error');
+      throw err;
+    }
+  };
+
+  const deleteStudent = async (id) => {
+    try {
+      const res = await adminApi.deleteStudent(id);
+      showToast(res.message || 'Student deleted successfully');
+      await fetchAdminData();
+    } catch (err) {
+      showToast('Error deleting student: ' + err.message, 'error');
+      throw err;
+    }
+  };
+
+  const importBooks = async (formData) => {
+    try {
+      const res = await adminApi.importBooks(formData);
+      showToast(res.message || 'Books imported successfully!');
+      await fetchAdminData();
+      return res;
+    } catch (err) {
+      showToast('Import failed: ' + err.message, 'error');
+      throw err;
+    }
+  };
+
+  const importStudents = async (formData) => {
+    try {
+      const res = await adminApi.importStudents(formData);
+      showToast(res.message || 'Students imported successfully!');
+      await fetchAdminData();
+      return res;
+    } catch (err) {
+      showToast('Import failed: ' + err.message, 'error');
+      throw err;
+    }
+  };
+
   return (
     <AdminContext.Provider
       value={{
@@ -105,6 +162,11 @@ export function AdminProvider({ children }) {
         addBook,
         deleteBook,
         addStudent,
+        editStudent,
+        resetStudentPassword,
+        deleteStudent,
+        importBooks,
+        importStudents,
         issueBook,
         returnBook
       }}

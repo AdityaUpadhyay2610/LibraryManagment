@@ -18,11 +18,7 @@ import { MyBooksTab } from './presentation/pages/student/MyBooksTab';
 import { CatalogTab } from './presentation/pages/student/CatalogTab';
 
 export default function App() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <Loader />;
-  }
+  const { user } = useAuth();
 
   return (
     <Routes>

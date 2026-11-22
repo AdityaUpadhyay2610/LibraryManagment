@@ -1,49 +1,25 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-
-### Database files (H2 Fallback) ###
-*.db
-
-### Logs ###
-*.log
-
-### React compiled build output in Spring Boot ###
-src/main/resources/static/assets/
-src/main/resources/static/index.html
-
-### Secrets and Sensitive Configuration ###
-src/main/resources/application-secret.properties
+# Environment and sensitive credentials
 .env
 *.env
+backend/.env
 
+# Build outputs
+dist/
+frontend/dist/
+
+# Logs
+*.log
+logs/
+
+# Operating system / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

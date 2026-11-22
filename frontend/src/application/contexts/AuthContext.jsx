@@ -2,12 +2,25 @@ import { createContext, useState, useEffect } from 'react';
 import { authApi } from '../../services/api';
 import { storage } from '../../services/storage';
 
+const USER_STORAGE_KEY = 'library_user_session';
+
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [theme, setThemeState] = useState(() => storage.getTheme());
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Instant synchronous initialization (loads in 0-1ms from local storage)
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem(USER_STORAGE_KEY);
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Zero-delay: do not block the page with full-screen loading spinners
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Sync theme to document element
@@ -24,25 +37,27 @@ export function AuthProvider({ children }) {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Background, non-blocking session check
   const checkSession = async () => {
     try {
       const currentUser = await authApi.me();
       setUser(currentUser);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser));
       return currentUser;
     } catch {
       setUser(null);
+      localStorage.removeItem(USER_STORAGE_KEY);
       return null;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Check Session on mount
+  // Check Session on mount silently in background
   useEffect(() => {
     checkSession();
 
     const handleUnauthorized = () => {
       setUser(null);
+      localStorage.removeItem(USER_STORAGE_KEY);
       showToast('Session expired. Please login again.', 'error');
     };
     window.addEventListener('unauthorized-api-call', handleUnauthorized);
@@ -50,40 +65,37 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (username, password) => {
-    setLoading(true);
     try {
       const loggedInUser = await authApi.login(username, password);
       setUser(loggedInUser);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(loggedInUser));
       showToast(`Welcome back, ${loggedInUser.fullName || loggedInUser.username}!`);
       return loggedInUser;
     } catch (err) {
       showToast(err.message, 'error');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const registerAdmin = async (username, password, fullName) => {
-    setLoading(true);
     try {
       await authApi.registerAdmin(username, password, fullName);
       showToast('Admin registered successfully! Please login.');
     } catch (err) {
       showToast(err.message, 'error');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
       await authApi.logout();
-      setUser(null);
-      showToast('Logged out successfully.');
     } catch (err) {
-      showToast('Logout failed: ' + err.message, 'error');
+      console.warn('Logout warning:', err.message);
+    } finally {
+      setUser(null);
+      localStorage.removeItem(USER_STORAGE_KEY);
+      showToast('Logged out successfully.');
     }
   };
 
@@ -99,8 +111,8 @@ export function AuthProvider({ children }) {
         toast,
         showToast,
         login,
-        logout,
         registerAdmin,
+        logout,
         checkSession
       }}
     >

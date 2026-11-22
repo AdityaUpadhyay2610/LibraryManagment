@@ -44,6 +44,17 @@ export function StudentProvider({ children }) {
     }
   };
 
+  const renewBook = async (transId) => {
+    try {
+      const res = await studentApi.renewBook(transId);
+      showToast(res.message || 'Book renewed successfully (+7 days)!');
+      await fetchStudentData();
+    } catch (err) {
+      showToast('Error renewing book: ' + err.message, 'error');
+      throw err;
+    }
+  };
+
   return (
     <StudentContext.Provider
       value={{
@@ -52,7 +63,8 @@ export function StudentProvider({ children }) {
         studentData,
         loadingData,
         fetchStudentData,
-        returnBook
+        returnBook,
+        renewBook,
       }}
     >
       {children}

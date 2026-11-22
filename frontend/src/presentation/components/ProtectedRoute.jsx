@@ -1,14 +1,10 @@
 import { Navigate } from 'react-router';
 import { useAuth } from '../../application/hooks/useAuth';
-import { Loader } from './Loader';
 
 export function ProtectedRoute({ children, requiredRole }) {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  if (loading) {
-    return <Loader />;
-  }
-
+  // Instant render without any blocking loader
   if (!user) {
     return <Navigate to="/login" replace />;
   }

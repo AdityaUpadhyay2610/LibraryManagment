@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
 import { formatDate } from '../../../services/utils';
+import { adminApi } from '../../../services/api';
 
 export function TransactionsTab() {
   const { adminData, returnBook, fetchAdminData } = useAdmin();
@@ -9,10 +10,26 @@ export function TransactionsTab() {
     fetchAdminData();
   }, [fetchAdminData]);
 
+  const handleExportCsv = () => {
+    window.open(adminApi.exportTransactionsCsvUrl(), '_blank');
+  };
+
   return (
     <div className="tab-pane">
       <div className="glass-panel">
-        <h3>Library Master Log Transactions</h3>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3>Library Master Log Transactions</h3>
+            <p className="text-muted text-sm mt-1">Audit trail of all issued, returned, and overdue books.</p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleExportCsv}
+          >
+            📥 Export CSV
+          </button>
+        </div>
         <div className="table-container">
           <table className="modern-table">
             <thead>

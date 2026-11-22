@@ -4,7 +4,7 @@ import { BookCover } from '../../components/BookCover';
 import { formatDate } from '../../../services/utils';
 
 export function MyBooksTab() {
-  const { studentData, returnBook, fetchStudentData } = useStudent();
+  const { studentData, returnBook, renewBook, fetchStudentData } = useStudent();
 
   useEffect(() => {
     fetchStudentData();
@@ -39,6 +39,9 @@ export function MyBooksTab() {
                 <td>
                   <div className="font-bold">{t.book?.title}</div>
                   <div className="text-xs text-muted">Author: {t.book?.author}</div>
+                  {t.renewCount > 0 && (
+                    <div className="text-xs text-primary font-medium mt-1">Renewed {t.renewCount}x</div>
+                  )}
                 </td>
                 <td>{formatDate(t.issueDate)}</td>
                 <td>{formatDate(t.dueDate)}</td>
@@ -62,13 +65,23 @@ export function MyBooksTab() {
                   {t.returnDate ? (
                     <span className="badge badge-success">Returned Successfully</span>
                   ) : (
-                    <button 
-                      type="button"
-                      className="btn btn-primary btn-sm" 
-                      onClick={() => returnBook(t.id)}
-                    >
-                      Return Book
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        className="btn btn-primary btn-sm" 
+                        onClick={() => returnBook(t.id)}
+                      >
+                        Return
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary btn-sm" 
+                        onClick={() => renewBook(t.id)}
+                        title="Extend loan by 7 days"
+                      >
+                        Renew
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>

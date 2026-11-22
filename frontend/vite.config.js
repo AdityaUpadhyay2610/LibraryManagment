@@ -7,10 +7,11 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
   build: {
-    outDir: process.env.BUILD_TO_SPRING ? '../src/main/resources/static' : 'dist',
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

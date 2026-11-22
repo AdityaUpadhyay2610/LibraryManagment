@@ -184,10 +184,6 @@ function AdminDashboardContent() {
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-            <div className="system-status">
-              <span className="status-dot green"></span>
-              MySQL Connected
-            </div>
           </div>
         </header>
 
