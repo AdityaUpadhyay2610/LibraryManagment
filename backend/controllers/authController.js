@@ -84,7 +84,10 @@ async function login(req, res) {
       console.error('[AUTH ERROR] Session save failed:', err);
       return res.status(500).json({ message: 'Failed to create user session' });
     }
-    return res.status(200).json(cleanUser);
+    return res.status(200).json({
+      ...cleanUser,
+      token: req.sessionID,
+    });
   });
 }
 
@@ -121,14 +124,37 @@ async function registerAdmin(req, res) {
  * Returns currently authenticated user details.
  */
 async function getCurrentUser(req, res) {
-  if (!req.session || !req.session.user) {
+  let sessionUser = req.session && req.session.user;
+
+  // If no cookie session, check Authorization: Bearer <token>
+  if (!sessionUser) {
+    const authHeader = req.headers.authorization || '';
+    if (authHeader.startsWith('Bearer ')) {
+      const sid = authHeader.substring(7).trim();
+      if (sid && req.sessionStore) {
+        sessionUser = await new Promise((resolve) => {
+          req.sessionStore.get(sid, (err, sess) => {
+            if (!err && sess && sess.user) {
+              req.session.user = sess.user;
+              req.sessionID = sid;
+              resolve(sess.user);
+            } else {
+              resolve(null);
+            }
+          });
+        });
+      }
+    }
+  }
+
+  if (!sessionUser) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
   // Fetch fresh info from DB in case profile was updated
   const result = await pool.query(
     'SELECT * FROM app_user WHERE id = $1',
-    [req.session.user.id]
+    [sessionUser.id]
   );
 
   if (result.rows.length === 0) {

@@ -1,22 +1,32 @@
 const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : '';
 const BASE_URL = `${API_BASE}/api`;
 
+const TOKEN_KEY = 'library_auth_token';
+
 async function request(url, options = {}) {
   options.credentials = 'include';
   
+  const headers = { ...options.headers };
+
+  // Attach Bearer token as fallback for cross-domain cookie blocks (e.g. Vercel -> Render)
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
     options.body = JSON.stringify(options.body);
-    options.headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    headers['Content-Type'] = 'application/json';
   }
+
+  options.headers = headers;
 
   const response = await fetch(`${BASE_URL}${url}`, options);
   
   if (response.status === 401) {
     // Session expired or unauthorized
     if (url !== '/auth/me' && url !== '/auth/login') {
+      localStorage.removeItem(TOKEN_KEY);
       window.dispatchEvent(new Event('unauthorized-api-call'));
     }
   }
@@ -35,18 +45,29 @@ async function request(url, options = {}) {
 }
 
 export const authApi = {
-  login: (username, password) => 
-    request('/auth/login', {
+  login: async (username, password) => {
+    const data = await request('/auth/login', {
       method: 'POST',
       body: { username, password }
-    }),
+    });
+    if (data && data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token);
+    }
+    return data;
+  },
   registerAdmin: (username, password, fullName) =>
     request('/auth/register-admin', {
       method: 'POST',
       body: { username, password, fullName }
     }),
   me: () => request('/auth/me', { method: 'GET' }),
-  logout: () => request('/auth/logout', { method: 'POST' }),
+  logout: async () => {
+    try {
+      await request('/auth/logout', { method: 'POST' });
+    } finally {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  },
   changePassword: (oldPassword, newPassword) =>
     request('/auth/change-password', {
       method: 'PUT',
