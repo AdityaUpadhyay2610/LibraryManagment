@@ -68,6 +68,16 @@ async function login(req, res) {
   // 5. Store user in session
   req.session.user = cleanUser;
 
+  // Set SameSite dynamically based on whether request is cross-origin
+  const origin = req.headers.origin;
+  const host = req.headers.host;
+  if (origin && host && !origin.includes(host)) {
+    req.session.cookie.sameSite = 'none';
+    req.session.cookie.secure = true;
+  } else {
+    req.session.cookie.sameSite = 'lax';
+  }
+
   // Explicitly save session before sending response
   req.session.save((err) => {
     if (err) {

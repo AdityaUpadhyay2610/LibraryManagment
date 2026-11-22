@@ -63,8 +63,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 5. Persistent Session Storage via PostgreSQL (connect-pg-simple)
-const isCrossSite = config.NODE_ENV === 'production' && config.CLIENT_ORIGIN && !config.CLIENT_ORIGIN.includes('localhost');
-
 app.use(
   session({
     store: new pgSession({
@@ -79,11 +77,26 @@ app.use(
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      sameSite: isCrossSite ? 'none' : 'lax',
+      sameSite: 'lax', // Use 'lax' by default: ensures Chrome, Safari & Edge always accept it on same-origin
       secure: config.NODE_ENV === 'production',
     },
   })
 );
+
+// Dynamic cookie adaptation: if request is truly cross-domain (e.g. Vercel -> Render), switch to SameSite=None
+app.use((req, res, next) => {
+  if (req.session && req.session.cookie) {
+    const origin = req.headers.origin;
+    const host = req.headers.host;
+    if (origin && host && !origin.includes(host)) {
+      req.session.cookie.sameSite = 'none';
+      req.session.cookie.secure = true;
+    } else {
+      req.session.cookie.sameSite = 'lax';
+    }
+  }
+  next();
+});
 
 // 6. Global Token Bucket Rate Limiter on all /api endpoints (excluding /api/health)
 const globalApiLimiter = createTokenBucket({
