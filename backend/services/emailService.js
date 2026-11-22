@@ -1,7 +1,3 @@
-// backend/services/emailService.js
-// Handles sending email notifications using nodemailer.
-// If email credentials are not set, it logs to the console without throwing errors.
-
 const nodemailer = require('nodemailer');
 const config = require('../config');
 
@@ -15,31 +11,14 @@ if (config.MAIL_USER && config.MAIL_PASS) {
       pass: config.MAIL_PASS,
     },
   });
-  console.log('[EMAIL SERVICE] Gmail transporter configured for:', config.MAIL_USER);
-} else {
-  console.log('[EMAIL SERVICE] No email credentials in config (MAIL_USER/MAIL_PASS). Email sending will be logged to console.');
 }
 
-/**
- * Sends an email notification.
- * @param {string} to - Recipient email address
- * @param {string} subject - Email subject line
- * @param {string} text - Plain text body
- * @param {string|null} html - Optional HTML body
- */
 async function sendEmail(to, subject, text, html = null) {
-  if (!to) {
-    console.warn('[EMAIL SERVICE] Skipping email: recipient address is empty.');
-    return;
-  }
+  if (!to) return;
 
-  // If no SMTP credentials are configured, log to console in dev mode
+  // in dev without smtp credentials, just log
   if (!transporter) {
-    console.log(`\n--- [SIMULATED EMAIL] ---`);
-    console.log(`To:      ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Body:\n${text}`);
-    console.log(`-------------------------\n`);
+    console.log(`[simulated email] to: ${to} | subject: ${subject}`);
     return;
   }
 
@@ -52,11 +31,10 @@ async function sendEmail(to, subject, text, html = null) {
       html: html || undefined,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL SERVICE] Email successfully sent to ${to} (MessageId: ${info.messageId})`);
+    await transporter.sendMail(mailOptions);
   } catch (err) {
-    // Log the error but DO NOT throw, so library transactions (issue/return) still succeed
-    console.error(`[EMAIL SERVICE ERROR] Failed to send email to ${to}:`, err.message);
+    // don't throw so transactions still complete
+    console.error(`failed to send email to ${to}:`, err.message);
   }
 }
 

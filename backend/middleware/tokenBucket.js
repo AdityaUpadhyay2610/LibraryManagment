@@ -1,22 +1,12 @@
-// Token Bucket Rate Limiter
-// Regulates API request rates, allowing brief burst capacity while refilling at a steady rate.
-
 const config = require('../config');
 
-/**
- * Creates an Express middleware for Token Bucket rate limiting.
- * @param {Object} options
- * @param {number} options.capacity - Maximum tokens the bucket can hold (default from config)
- * @param {number} options.refillPerSecond - How many tokens are added each second (default from config)
- */
 function createTokenBucket(options = {}) {
   const capacity = options.capacity || config.TOKEN_BUCKET_CAPACITY || 60;
   const refillPerSecond = options.refillPerSecond || config.TOKEN_BUCKET_REFILL_PER_SEC || 1;
 
-  // In-memory store: key -> { tokens, lastRefillTime }
   const clients = new Map();
 
-  // Periodically clean up clients who haven't made requests in 10 minutes to save memory
+  // clean up old clients after 10 mins
   setInterval(() => {
     const now = Date.now();
     for (const [key, state] of clients.entries()) {
@@ -24,10 +14,9 @@ function createTokenBucket(options = {}) {
         clients.delete(key);
       }
     }
-  }, 5 * 60 * 1000).unref(); // .unref() lets Node exit cleanly if this timer is active
+  }, 5 * 60 * 1000).unref();
 
   return function tokenBucketMiddleware(req, res, next) {
-    // Unique identifier for client: authenticated user ID or remote IP address
     const clientKey = req.session && req.session.user && req.session.user.id
       ? `user_${req.session.user.id}`
       : `ip_${req.ip || req.connection.remoteAddress || 'unknown'}`;
@@ -36,32 +25,28 @@ function createTokenBucket(options = {}) {
     let state = clients.get(clientKey);
 
     if (!state) {
-      // First visit: start with a full bucket
       state = {
         tokens: capacity,
         lastRefillTime: now,
       };
       clients.set(clientKey, state);
     } else {
-      // Refill tokens lazily based on how many seconds passed since the last request
+      // refill tokens based on time passed
       const elapsedSeconds = (now - state.lastRefillTime) / 1000;
       const tokensToAdd = elapsedSeconds * refillPerSecond;
       state.tokens = Math.min(capacity, state.tokens + tokensToAdd);
       state.lastRefillTime = now;
     }
 
-    // Check if we have at least 1 token to consume
     if (state.tokens >= 1) {
       state.tokens -= 1;
 
-      // Set standard informational rate limit headers
       res.setHeader('X-RateLimit-Limit', capacity);
       res.setHeader('X-RateLimit-Remaining', Math.floor(state.tokens));
 
       return next();
     }
 
-    // Bucket is empty: calculate how long until at least 1 token is available
     const missingTokens = 1 - state.tokens;
     const retryAfterSeconds = Math.ceil(missingTokens / refillPerSecond);
 

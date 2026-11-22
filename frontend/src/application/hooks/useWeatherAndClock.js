@@ -8,7 +8,7 @@ export function useWeatherAndClock() {
   const [locationName, setLocationName] = useState('Detecting...');
   const [loadingWeather, setLoadingWeather] = useState(true);
 
-  // Live ticking clock
+  // update clock every second
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
@@ -30,7 +30,6 @@ export function useWeatherAndClock() {
   const fetchWeatherData = useCallback(async (lat, lon) => {
     setLoadingWeather(true);
     try {
-      // 1. Fetch Weather from Open-Meteo
       const response = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code`
       );
@@ -42,7 +41,6 @@ export function useWeatherAndClock() {
         setWeatherIcon(cond.icon);
       }
 
-      // 2. Reverse Geocode City Name (using free OpenStreetMap Nominatim API)
       const geoResponse = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
         { headers: { 'Accept-Language': 'en' } }
@@ -59,8 +57,7 @@ export function useWeatherAndClock() {
       } else {
         setLocationName('Detected');
       }
-    } catch (err) {
-      console.error('Failed to fetch weather/location:', err);
+    } catch {
       setWeatherCondition('Offline');
       setLocationName('Unknown');
     } finally {
@@ -69,7 +66,6 @@ export function useWeatherAndClock() {
   }, []);
 
   const refreshWeather = useCallback(() => {
-    // Default to New Delhi coordinates
     const defaultLat = 28.6139;
     const defaultLon = 77.2090;
 
@@ -87,7 +83,6 @@ export function useWeatherAndClock() {
     }
   }, [fetchWeatherData]);
 
-  // Initial load
   useEffect(() => {
     refreshWeather();
   }, [refreshWeather]);

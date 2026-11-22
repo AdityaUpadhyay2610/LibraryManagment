@@ -1,22 +1,12 @@
-// Leaky Bucket Rate Limiter & Login Lockout Tracker
-// Smooths request traffic and protects sensitive endpoints against brute force attempts.
-
 const config = require('../config');
 
-/**
- * Creates an Express middleware for Leaky Bucket rate limiting.
- * @param {Object} options
- * @param {number} options.capacity - Maximum water/queue units the bucket can hold
- * @param {number} options.leakRatePerSecond - Water units leaked per second
- */
 function createLeakyBucket(options = {}) {
   const capacity = options.capacity || config.LEAKY_BUCKET_CAPACITY || 5;
   const leakRatePerSecond = options.leakRatePerSecond || config.LEAKY_BUCKET_LEAK_PER_SEC || 0.2;
 
-  // In-memory store: key -> { waterLevel, lastLeakTime }
   const clients = new Map();
 
-  // Periodic cleanup of inactive clients
+  // clean up inactive clients every 5 mins
   setInterval(() => {
     const now = Date.now();
     for (const [key, state] of clients.entries()) {
@@ -41,14 +31,13 @@ function createLeakyBucket(options = {}) {
       };
       clients.set(clientKey, state);
     } else {
-      // Calculate how much water has leaked out since the last request
+      // calculate how much leaked since last time
       const elapsedSeconds = (now - state.lastLeakTime) / 1000;
       const leakedAmount = elapsedSeconds * leakRatePerSecond;
       state.waterLevel = Math.max(0, state.waterLevel - leakedAmount);
       state.lastLeakTime = now;
     }
 
-    // Check if adding 1 unit of request water will overflow the bucket
     if (state.waterLevel + 1 <= capacity) {
       state.waterLevel += 1;
 
@@ -59,7 +48,7 @@ function createLeakyBucket(options = {}) {
       return next();
     }
 
-    // Bucket is full: calculate wait time for 1 unit of water to leak
+    // bucket full, return retry time
     const overflowAmount = (state.waterLevel + 1) - capacity;
     const retryAfterSeconds = Math.max(1, Math.ceil(overflowAmount / leakRatePerSecond));
 
@@ -71,12 +60,8 @@ function createLeakyBucket(options = {}) {
   };
 }
 
-/**
- * In-memory Login Lockout Tracker
- * Tracks failed login attempts per username.
- * After 5 failed attempts, locks out that username for 15 minutes.
- */
-const failedLoginAttempts = new Map(); // username -> { count, lockedUntil }
+// failed login tracker for lockout
+const failedLoginAttempts = new Map();
 
 function recordFailedLogin(username) {
   if (!username) return;
@@ -85,8 +70,9 @@ function recordFailedLogin(username) {
   const record = failedLoginAttempts.get(key) || { count: 0, lockedUntil: 0 };
 
   record.count += 1;
+  // lock for 15 mins after 5 failed tries
   if (record.count >= 5) {
-    record.lockedUntil = now + 15 * 60 * 1000; // 15 minutes lock
+    record.lockedUntil = now + 15 * 60 * 1000;
   }
   failedLoginAttempts.set(key, record);
 }
@@ -109,7 +95,6 @@ function checkLoginLockout(username) {
     return { isLocked: true, retryAfterSeconds: remainingSeconds };
   }
 
-  // If lockout expired, reset
   if (record.lockedUntil && now >= record.lockedUntil) {
     failedLoginAttempts.delete(key);
   }

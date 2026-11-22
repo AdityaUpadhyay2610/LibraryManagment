@@ -4,13 +4,11 @@ import { useAuth } from '../../application/hooks/useAuth';
 export function ProtectedRoute({ children, requiredRole }) {
   const { user } = useAuth();
 
-  // Instant render without any blocking loader
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
   if (requiredRole && user.role !== requiredRole) {
-    // Redirect to correct dashboard based on actual role
     if (user.role === 'ROLE_ADMIN') {
       return <Navigate to="/admin" replace />;
     } else if (user.role === 'ROLE_STUDENT') {

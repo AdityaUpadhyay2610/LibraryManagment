@@ -1,6 +1,3 @@
-// backend/tests/rateLimiter.test.js
-// Tests for custom Token Bucket and Leaky Bucket rate limiting middlewares.
-
 const express = require('express');
 const request = require('supertest');
 const createTokenBucket = require('../middleware/tokenBucket');

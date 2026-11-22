@@ -9,7 +9,7 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [theme, setThemeState] = useState(() => storage.getTheme());
 
-  // Instant synchronous initialization (loads in 0-1ms from local storage)
+  // load saved user from local storage
   const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem(USER_STORAGE_KEY);
@@ -19,11 +19,9 @@ export function AuthProvider({ children }) {
     }
   });
 
-  // Zero-delay: do not block the page with full-screen loading spinners
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Sync theme to document element
   useEffect(() => {
     storage.setTheme(theme);
   }, [theme]);
@@ -37,7 +35,7 @@ export function AuthProvider({ children }) {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Background, non-blocking session check
+  // check session with backend
   const checkSession = async () => {
     try {
       const currentUser = await authApi.me();
@@ -51,7 +49,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Check Session on mount silently in background
   useEffect(() => {
     checkSession();
 

@@ -1,17 +1,9 @@
-// backend/controllers/authController.js
-// Handles user authentication, registration, session management, and password recovery.
-
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { pool } = require('../db/pool');
 const { recordFailedLogin, clearFailedLogin, checkLoginLockout } = require('../middleware/leakyBucket');
 const emailService = require('../services/emailService');
 
-/**
- * Sanitizes user object to remove password and sensitive hash fields.
- * @param {Object} u - Database user row
- * @returns {Object}
- */
 function sanitizeUser(u) {
   return {
     id: u.id,
@@ -24,14 +16,10 @@ function sanitizeUser(u) {
   };
 }
 
-/**
- * POST /api/auth/login
- * Authenticates user credentials, sets session cookie, and tracks failed attempts for lockout.
- */
 async function login(req, res) {
   const { username, password } = req.body;
 
-  // 1. Check if user is temporarily locked out due to repeated failed logins
+  // lock out account if too many failed attempts
   const lockout = checkLoginLockout(username);
   if (lockout.isLocked) {
     return res.status(429).json({
@@ -40,7 +28,6 @@ async function login(req, res) {
     });
   }
 
-  // 2. Query user from database
   const userResult = await pool.query(
     'SELECT * FROM app_user WHERE username = $1',
     [username]
@@ -53,22 +40,18 @@ async function login(req, res) {
 
   const user = userResult.rows[0];
 
-  // Verify bcrypt password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     recordFailedLogin(username);
     return res.status(401).json({ message: 'Invalid username or password' });
   }
 
-  // 4. Success: clear failed attempts
   clearFailedLogin(username);
 
   const cleanUser = sanitizeUser(user);
-
-  // 5. Store user in session
   req.session.user = cleanUser;
 
-  // Set SameSite dynamically based on whether request is cross-origin
+  // cross-origin needs SameSite=None, otherwise Lax is fine
   const origin = req.headers.origin;
   const host = req.headers.host;
   if (origin && host && !origin.includes(host)) {
@@ -78,10 +61,9 @@ async function login(req, res) {
     req.session.cookie.sameSite = 'lax';
   }
 
-  // Explicitly save session before sending response
   req.session.save((err) => {
     if (err) {
-      console.error('[AUTH ERROR] Session save failed:', err);
+      console.error('session save error:', err);
       return res.status(500).json({ message: 'Failed to create user session' });
     }
     return res.status(200).json({
@@ -91,14 +73,9 @@ async function login(req, res) {
   });
 }
 
-/**
- * POST /api/auth/register-admin
- * Registers a new Admin account.
- */
 async function registerAdmin(req, res) {
   const { username, password, fullName, email } = req.body;
 
-  // Check username uniqueness
   const existing = await pool.query(
     'SELECT id FROM app_user WHERE username = $1',
     [username]
@@ -107,7 +84,6 @@ async function registerAdmin(req, res) {
     return res.status(400).json({ message: 'Username already exists' });
   }
 
-  // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
   await pool.query(
@@ -119,14 +95,10 @@ async function registerAdmin(req, res) {
   return res.status(200).json({ message: 'Admin registered successfully' });
 }
 
-/**
- * GET /api/auth/me
- * Returns currently authenticated user details.
- */
 async function getCurrentUser(req, res) {
   let sessionUser = req.session && req.session.user;
 
-  // If no cookie session, check Authorization: Bearer <token>
+  // fallback to bearer token if browser blocked the cookie
   if (!sessionUser) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ')) {
@@ -151,7 +123,6 @@ async function getCurrentUser(req, res) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
-  // Fetch fresh info from DB in case profile was updated
   const result = await pool.query(
     'SELECT * FROM app_user WHERE id = $1',
     [sessionUser.id]
@@ -166,14 +137,10 @@ async function getCurrentUser(req, res) {
   return res.status(200).json(cleanUser);
 }
 
-/**
- * POST /api/auth/logout
- * Destroys session and clears cookie.
- */
 function logout(req, res) {
   req.session.destroy((err) => {
     if (err) {
-      console.error('[AUTH ERROR] Logout error:', err);
+      console.error('logout error:', err);
       return res.status(500).json({ message: 'Logout failed' });
     }
     res.clearCookie('connect.sid');
@@ -181,10 +148,6 @@ function logout(req, res) {
   });
 }
 
-/**
- * PUT /api/auth/change-password
- * Allows logged-in user to update their password.
- */
 async function changePassword(req, res) {
   const userId = req.session.user.id;
   const { oldPassword, newPassword } = req.body;
@@ -205,10 +168,6 @@ async function changePassword(req, res) {
   return res.status(200).json({ message: 'Password updated successfully' });
 }
 
-/**
- * POST /api/auth/forgot-password
- * Sends an email with a 30-minute password reset token.
- */
 async function forgotPassword(req, res) {
   const { email } = req.body;
   if (!email) {
@@ -217,7 +176,7 @@ async function forgotPassword(req, res) {
 
   const result = await pool.query('SELECT * FROM app_user WHERE email = $1', [email.trim()]);
   if (result.rows.length === 0) {
-    // For security, do not disclose whether user exists
+    // don't reveal whether the email exists or not
     return res.status(200).json({ message: 'If that email is registered, a password reset code has been sent.' });
   }
 
@@ -230,23 +189,19 @@ async function forgotPassword(req, res) {
     [resetToken, expires, user.id]
   );
 
-  const subject = '🔒 Library Management System - Password Reset Request';
+  const subject = 'Library Management System - Password Reset Request';
   const body = `Hello ${user.full_name || user.username},\n\n` +
-    `We received a request to reset your password. Use the token below to reset your password:\n\n` +
+    `Use this token to reset your password:\n\n` +
     `Reset Token: ${resetToken}\n\n` +
     `This token will expire in 30 minutes.\n` +
-    `If you did not request this, you can safely ignore this email.\n\n` +
-    `Best Regards,\nLibrary Team`;
+    `If you did not request this, you can ignore this email.\n\n` +
+    `Library Team`;
 
   await emailService.sendEmail(user.email, subject, body);
 
   return res.status(200).json({ message: 'If that email is registered, a password reset code has been sent.' });
 }
 
-/**
- * POST /api/auth/reset-password
- * Validates reset token and sets new password.
- */
 async function resetPassword(req, res) {
   const { token, newPassword } = req.body;
   if (!token || !newPassword || newPassword.length < 8) {

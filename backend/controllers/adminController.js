@@ -1,19 +1,10 @@
-// backend/controllers/adminController.js
-// Handles administrative operations: dashboard overview, book & student management,
-// issuing, returning, fine payments, analytics reports, and CSV export.
-
 const bcrypt = require('bcryptjs');
 const xlsx = require('xlsx');
 const { pool } = require('../db/pool');
 const transactionService = require('../services/transactionService');
 const fineService = require('../services/fineService');
 
-/**
- * GET /api/admin/dashboard
- * Fetches overview metrics, catalog books, registered users, and active transactions.
- */
 async function viewDashboard(req, res) {
-  // 1. Fetch all books
   const booksResult = await pool.query(`
     SELECT id, title, author, isbn, category, copies, total_copies AS "totalCopies", image_url AS "imageUrl", created_at AS "createdAt"
     FROM book
@@ -21,7 +12,6 @@ async function viewDashboard(req, res) {
   `);
   const books = booksResult.rows;
 
-  // 2. Fetch all sanitized users
   const usersResult = await pool.query(`
     SELECT id, username, full_name AS "fullName", role, branch, academic_year AS "year", email, created_at AS "createdAt"
     FROM app_user
@@ -29,7 +19,6 @@ async function viewDashboard(req, res) {
   `);
   const users = usersResult.rows;
 
-  // 3. Fetch all transactions joined with student and book
   const transResult = await pool.query(`
     SELECT 
       t.id, t.issue_date AS "issueDate", t.due_date AS "dueDate", t.return_date AS "returnDate",
@@ -69,13 +58,11 @@ async function viewDashboard(req, res) {
     renewCount: r.renewCount,
   }));
 
-  // 4. Calculate Stats
   const statBooks = books.reduce((sum, b) => sum + (b.copies || 0), 0);
   const statIssued = transactions.filter((t) => t.returnDate === null).length;
   const statStudents = users.filter((u) => u.role === 'ROLE_STUDENT').length;
   const statFines = transactions.reduce((sum, t) => sum + (t.fine || 0), 0);
 
-  // 5. Distinct branches and years
   const branchList = [...new Set(users.map((u) => u.branch).filter((b) => b && b !== 'N/A'))];
   const yearList = [...new Set(users.map((u) => u.year).filter((y) => y && y !== 'N/A'))];
 
@@ -92,10 +79,6 @@ async function viewDashboard(req, res) {
   });
 }
 
-/**
- * POST /api/admin/issue-book
- * Issues a book to a student.
- */
 async function issueBook(req, res) {
   const { studentUsername, studentId, bookTitle, bookId } = req.body;
   const result = await transactionService.issueBook({
@@ -111,10 +94,6 @@ async function issueBook(req, res) {
   });
 }
 
-/**
- * POST /api/admin/return-book/:transId
- * Marks a book transaction as returned, recalculates late fine, and restores stock.
- */
 async function returnBook(req, res) {
   const transId = parseInt(req.params.transId, 10);
   const result = await transactionService.returnBook(transId, null, true);
@@ -125,10 +104,6 @@ async function returnBook(req, res) {
   });
 }
 
-/**
- * POST /api/admin/add-student
- * Creates a new user account (Admin decides whether the user is STUDENT or ADMIN).
- */
 async function addStudent(req, res) {
   const { username, password, fullName, branch, year, email, role } = req.body;
 
@@ -153,10 +128,6 @@ async function addStudent(req, res) {
   });
 }
 
-/**
- * POST /api/admin/add-book
- * Adds a new book to the catalog.
- */
 async function addBook(req, res) {
   const { title, author, copies, imageUrl, isbn, category } = req.body;
 
@@ -174,10 +145,6 @@ async function addBook(req, res) {
   });
 }
 
-/**
- * PUT /api/admin/books/:id
- * Updates an existing book's details.
- */
 async function editBook(req, res) {
   const { id } = req.params;
   const { title, author, copies, imageUrl, isbn, category } = req.body;
@@ -209,10 +176,6 @@ async function editBook(req, res) {
   });
 }
 
-/**
- * DELETE /api/admin/delete-book/:id
- * Safely deletes a book, verifying there are no active (unreturned) loans.
- */
 async function deleteBook(req, res) {
   const { id } = req.params;
 
@@ -221,7 +184,7 @@ async function deleteBook(req, res) {
     return res.status(404).json({ message: 'Book not found' });
   }
 
-  // Safe delete check: verify no active unreturned loans
+  // don't delete if copies are currently borrowed
   const activeLoans = await pool.query(
     'SELECT COUNT(*) FROM "transaction" WHERE book_id = $1 AND return_date IS NULL',
     [id]
@@ -232,7 +195,6 @@ async function deleteBook(req, res) {
     });
   }
 
-  // Delete transaction history and book record
   await pool.query('DELETE FROM "transaction" WHERE book_id = $1', [id]);
   await pool.query('DELETE FROM reservation WHERE book_id = $1', [id]);
   await pool.query('DELETE FROM book WHERE id = $1', [id]);
@@ -240,10 +202,6 @@ async function deleteBook(req, res) {
   return res.status(200).json({ message: 'Book deleted successfully' });
 }
 
-/**
- * GET /api/admin/students
- * Lists student accounts with optional search by username, fullName, or branch.
- */
 async function getStudents(req, res) {
   const { search } = req.query;
   const params = ['ROLE_STUDENT'];
@@ -264,10 +222,6 @@ async function getStudents(req, res) {
   return res.status(200).json(result.rows);
 }
 
-/**
- * PUT /api/admin/students/:id
- * Updates a user's profile details, ID/username, password, and assigned Role.
- */
 async function editStudent(req, res) {
   const { id } = req.params;
   const { username, fullName, branch, year, email, password, role } = req.body;
@@ -279,7 +233,6 @@ async function editStudent(req, res) {
 
   const current = existing.rows[0];
 
-  // If username is being changed, check that new username is not already taken
   let newUsername = current.username;
   if (username && username.trim() !== current.username) {
     const checkUsername = await pool.query('SELECT id FROM app_user WHERE username = $1 AND id != $2', [username.trim(), id]);
@@ -317,10 +270,6 @@ async function editStudent(req, res) {
   });
 }
 
-/**
- * POST /api/admin/students/:id/reset-password
- * Direct password reset for a student or admin account by an Admin.
- */
 async function resetStudentPassword(req, res) {
   const { id } = req.params;
   const { newPassword } = req.body;
@@ -340,14 +289,9 @@ async function resetStudentPassword(req, res) {
   return res.status(200).json({ message: 'Password reset successfully' });
 }
 
-/**
- * DELETE /api/admin/students/:id
- * Deletes a user account (blocks if they hold active unreturned books or if trying to delete own account).
- */
 async function deleteStudent(req, res) {
   const { id } = req.params;
 
-  // Prevent admin from deleting their own currently logged-in account
   if (req.session && req.session.user && req.session.user.id === parseInt(id, 10)) {
     return res.status(400).json({ message: 'You cannot delete your own active admin account.' });
   }
@@ -357,7 +301,7 @@ async function deleteStudent(req, res) {
     return res.status(404).json({ message: 'User not found' });
   }
 
-  // Check for active unreturned loans if user is a student
+  // don't delete if student still has books borrowed
   const activeLoans = await pool.query(
     'SELECT COUNT(*) FROM "transaction" WHERE student_id = $1 AND return_date IS NULL',
     [id]
@@ -372,10 +316,6 @@ async function deleteStudent(req, res) {
   return res.status(200).json({ message: 'User deleted successfully' });
 }
 
-/**
- * POST /api/admin/transactions/:id/pay-fine
- * Marks a late fee / fine as paid.
- */
 async function payFine(req, res) {
   const { id } = req.params;
 
@@ -388,10 +328,6 @@ async function payFine(req, res) {
   return res.status(200).json({ message: 'Fine marked as paid successfully' });
 }
 
-/**
- * GET /api/admin/overdue
- * Retrieves all currently overdue book transactions with live calculated fines.
- */
 async function getOverdueReport(req, res) {
   const query = `
     SELECT 
@@ -418,10 +354,6 @@ async function getOverdueReport(req, res) {
   return res.status(200).json(overdueList);
 }
 
-/**
- * GET /api/admin/stats
- * Provides library usage statistics and analytics.
- */
 async function getStatsReport(req, res) {
   const totalBooksRes = await pool.query('SELECT COALESCE(SUM(copies), 0) AS total_available, COALESCE(SUM(total_copies), 0) AS total_inventory FROM book');
   const activeLoansRes = await pool.query('SELECT COUNT(*) AS active_count FROM "transaction" WHERE return_date IS NULL');
@@ -429,7 +361,6 @@ async function getStatsReport(req, res) {
   const finesRes = await pool.query('SELECT COALESCE(SUM(fine), 0) AS collected FROM "transaction" WHERE fine_paid = true');
   const unpaidFinesRes = await pool.query('SELECT COALESCE(SUM(fine), 0) AS pending FROM "transaction" WHERE fine_paid = false AND fine > 0');
 
-  // Top 5 most borrowed books
   const popularBooksRes = await pool.query(`
     SELECT b.id, b.title, b.author, COUNT(t.id) AS borrow_count
     FROM "transaction" t
@@ -439,7 +370,6 @@ async function getStatsReport(req, res) {
     LIMIT 5
   `);
 
-  // Usage by academic branch
   const branchUsageRes = await pool.query(`
     SELECT u.branch, COUNT(t.id) AS borrow_count
     FROM "transaction" t
@@ -461,10 +391,6 @@ async function getStatsReport(req, res) {
   });
 }
 
-/**
- * GET /api/admin/transactions
- * Filterable transaction history with pagination and status filters.
- */
 async function getTransactions(req, res) {
   const { status, from, to, page = 1, limit = 15 } = req.query;
 
@@ -527,10 +453,6 @@ async function getTransactions(req, res) {
   });
 }
 
-/**
- * GET /api/admin/export/transactions.csv
- * Exports library transaction records as a downloadable CSV file.
- */
 async function exportTransactionsCsv(req, res) {
   const query = `
     SELECT 
@@ -569,65 +491,12 @@ async function exportTransactionsCsv(req, res) {
   return res.status(200).send(csvContent);
 }
 
-// Pre-built collection of 50 comprehensive books for the template
-const SAMPLE_50_BOOKS = [
+const SAMPLE_BOOKS = [
   { Title: 'Clean Code', Author: 'Robert C. Martin', Copies: 5, ISBN: '978-0132350884', Category: 'Software Engineering' },
-  { Title: 'The Pragmatic Programmer', Author: 'Andrew Hunt & David Thomas', Copies: 4, ISBN: '978-0201616224', Category: 'Software Engineering' },
-  { Title: 'Design Patterns', Author: 'Erich Gamma et al.', Copies: 3, ISBN: '978-0201633610', Category: 'Software Engineering' },
-  { Title: 'Introduction to Algorithms (CLRS)', Author: 'Thomas H. Cormen', Copies: 6, ISBN: '978-0262033848', Category: 'Computer Science' },
-  { Title: 'Structure and Interpretation of Computer Programs', Author: 'Harold Abelson', Copies: 2, ISBN: '978-0262510875', Category: 'Computer Science' },
-  { Title: 'JavaScript: The Good Parts', Author: 'Douglas Crockford', Copies: 5, ISBN: '978-0596517748', Category: 'Web Development' },
-  { Title: 'Eloquent JavaScript', Author: 'Marijn Haverbeke', Copies: 4, ISBN: '978-1593279509', Category: 'Web Development' },
-  { Title: 'You Don\'t Know JS Yet: Get Started', Author: 'Kyle Simpson', Copies: 6, ISBN: '978-1093223064', Category: 'Web Development' },
-  { Title: 'Learning React (2nd Edition)', Author: 'Alex Banks & Eve Porcello', Copies: 4, ISBN: '978-1492051725', Category: 'Web Development' },
-  { Title: 'Node.js Design Patterns', Author: 'Mario Casciaro', Copies: 4, ISBN: '978-1839214110', Category: 'Web Development' },
-  { Title: 'Database System Concepts', Author: 'Abraham Silberschatz', Copies: 5, ISBN: '978-0073523323', Category: 'Database' },
-  { Title: 'Designing Data-Intensive Applications', Author: 'Martin Kleppmann', Copies: 7, ISBN: '978-1449373320', Category: 'Database' },
-  { Title: 'High Performance MySQL', Author: 'Silvia Botros', Copies: 3, ISBN: '978-1492080510', Category: 'Database' },
-  { Title: 'PostgreSQL: Up and Running', Author: 'Regina Obe & Leo Hsu', Copies: 4, ISBN: '978-1491963418', Category: 'Database' },
-  { Title: 'Operating System Concepts', Author: 'Abraham Silberschatz', Copies: 5, ISBN: '978-1119800361', Category: 'Operating Systems' },
-  { Title: 'Modern Operating Systems', Author: 'Andrew S. Tanenbaum', Copies: 4, ISBN: '978-0133591620', Category: 'Operating Systems' },
-  { Title: 'Linux Kernel Development', Author: 'Robert Love', Copies: 3, ISBN: '978-0672329463', Category: 'Operating Systems' },
-  { Title: 'Computer Networks (5th Edition)', Author: 'Andrew S. Tanenbaum', Copies: 5, ISBN: '978-0132126953', Category: 'Networking' },
-  { Title: 'TCP/IP Illustrated, Volume 1', Author: 'W. Richard Stevens', Copies: 3, ISBN: '978-0321336316', Category: 'Networking' },
-  { Title: 'Computer Systems: A Programmer\'s Perspective', Author: 'Randal E. Bryant', Copies: 4, ISBN: '978-0134092669', Category: 'Computer Science' },
-  { Title: 'Artificial Intelligence: A Modern Approach', Author: 'Stuart Russell & Peter Norvig', Copies: 6, ISBN: '978-0134610993', Category: 'Artificial Intelligence' },
-  { Title: 'Hands-On Machine Learning with Scikit-Learn', Author: 'Aurélien Géron', Copies: 5, ISBN: '978-1098125974', Category: 'Machine Learning' },
-  { Title: 'Deep Learning', Author: 'Ian Goodfellow & Yoshua Bengio', Copies: 4, ISBN: '978-0262035613', Category: 'Machine Learning' },
-  { Title: 'Pattern Recognition and Machine Learning', Author: 'Christopher M. Bishop', Copies: 3, ISBN: '978-0387310732', Category: 'Machine Learning' },
-  { Title: 'Python Crash Course', Author: 'Eric Matthes', Copies: 6, ISBN: '978-1718502703', Category: 'Programming' },
-  { Title: 'Fluent Python (2nd Edition)', Author: 'Luciano Ramalho', Copies: 4, ISBN: '978-1492056355', Category: 'Programming' },
-  { Title: 'Effective Java (3rd Edition)', Author: 'Joshua Bloch', Copies: 5, ISBN: '978-0134685991', Category: 'Programming' },
-  { Title: 'Spring Boot in Action', Author: 'Craig Walls', Copies: 3, ISBN: '978-1617292545', Category: 'Software Engineering' },
-  { Title: 'C++ Primer (5th Edition)', Author: 'Stanley B. Lippman', Copies: 4, ISBN: '978-0321714114', Category: 'Programming' },
-  { Title: 'The C Programming Language', Author: 'Brian W. Kernighan', Copies: 5, ISBN: '978-0131103627', Category: 'Programming' },
-  { Title: 'The Rust Programming Language', Author: 'Steve Klabnik', Copies: 4, ISBN: '978-1718503106', Category: 'Programming' },
-  { Title: 'Learning Go (2nd Edition)', Author: 'Jon Bodner', Copies: 3, ISBN: '978-1098139292', Category: 'Programming' },
-  { Title: 'Cloud Native DevOps with Kubernetes', Author: 'John Arundel', Copies: 4, ISBN: '978-1492040767', Category: 'Cloud Computing' },
-  { Title: 'Kubernetes: Up and Running', Author: 'Kelsey Hightower', Copies: 4, ISBN: '978-1098110208', Category: 'Cloud Computing' },
-  { Title: 'Docker in Practice', Author: 'Ian Miell', Copies: 3, ISBN: '978-1617294808', Category: 'DevOps' },
-  { Title: 'Site Reliability Engineering', Author: 'Niall Richard Murphy et al.', Copies: 5, ISBN: '978-1491929124', Category: 'DevOps' },
-  { Title: 'The Phoenix Project', Author: 'Gene Kim & Kevin Behr', Copies: 6, ISBN: '978-1942788294', Category: 'DevOps' },
-  { Title: 'Building Microservices (2nd Edition)', Author: 'Sam Newman', Copies: 4, ISBN: '978-1492034025', Category: 'Software Architecture' },
-  { Title: 'Monolith to Microservices', Author: 'Sam Newman', Copies: 3, ISBN: '978-1492047841', Category: 'Software Architecture' },
-  { Title: 'Domain-Driven Design', Author: 'Eric Evans', Copies: 4, ISBN: '978-0321125217', Category: 'Software Architecture' },
-  { Title: 'Refactoring: Improving Existing Code', Author: 'Martin Fowler', Copies: 5, ISBN: '978-0134757599', Category: 'Software Engineering' },
-  { Title: 'Clean Architecture', Author: 'Robert C. Martin', Copies: 5, ISBN: '978-0134494166', Category: 'Software Architecture' },
-  { Title: 'Web Application Security', Author: 'Andrew Hoffman', Copies: 4, ISBN: '978-1492053118', Category: 'Cybersecurity' },
-  { Title: 'The Web Application Hacker\'s Handbook', Author: 'Dafydd Stuttard', Copies: 3, ISBN: '978-1118026472', Category: 'Cybersecurity' },
-  { Title: 'Practical Malware Analysis', Author: 'Michael Sikorski', Copies: 3, ISBN: '978-1593272906', Category: 'Cybersecurity' },
-  { Title: 'Cracking the Coding Interview', Author: 'Gayle Laakmann McDowell', Copies: 8, ISBN: '978-0984782857', Category: 'Career' },
-  { Title: 'Grokking Algorithms', Author: 'Aditya Bhargava', Copies: 6, ISBN: '978-1617292231', Category: 'Algorithms' },
-  { Title: 'System Design Interview – Volume 1', Author: 'Alex Xu', Copies: 7, ISBN: '979-8664653403', Category: 'Career' },
-  { Title: 'System Design Interview – Volume 2', Author: 'Alex Xu & Sahn Lam', Copies: 6, ISBN: '979-8837346808', Category: 'Career' },
-  { Title: 'Soft Skills: The Software Developer\'s Life Manual', Author: 'John Sonmez', Copies: 4, ISBN: '978-1617292392', Category: 'Career' }
+  { Title: 'Introduction to Algorithms', Author: 'Thomas H. Cormen', Copies: 4, ISBN: '978-0262033848', Category: 'Computer Science' },
+  { Title: 'JavaScript: The Good Parts', Author: 'Douglas Crockford', Copies: 3, ISBN: '978-0596517748', Category: 'Web Development' },
 ];
 
-/**
- * POST /api/admin/import/books
- * Bulk imports books from an uploaded Excel (.xlsx, .xls) or CSV spreadsheet.
- * Supports importing 50+ books in a single batch.
- */
 async function importBooksExcel(req, res) {
   if (!req.file || !req.file.buffer) {
     return res.status(400).json({ message: 'Please upload an Excel (.xlsx, .xls) or CSV file.' });
@@ -669,7 +538,7 @@ async function importBooksExcel(req, res) {
         continue;
       }
 
-      // Check if book exists by ISBN or by Title + Author
+      // check if book already exists by isbn or title+author
       let existingBook = null;
       if (isbn) {
         const checkIsbn = await client.query('SELECT * FROM book WHERE isbn = $1', [isbn]);
@@ -726,10 +595,6 @@ async function importBooksExcel(req, res) {
   }
 }
 
-/**
- * POST /api/admin/import/students
- * Bulk imports students with passwords from an uploaded Excel or CSV spreadsheet.
- */
 async function importStudentsExcel(req, res) {
   if (!req.file || !req.file.buffer) {
     return res.status(400).json({ message: 'Please upload an Excel (.xlsx, .xls) or CSV file.' });
@@ -772,7 +637,6 @@ async function importStudentsExcel(req, res) {
         continue;
       }
 
-      // Check if username already exists
       const existingUser = await client.query('SELECT id FROM app_user WHERE username = $1', [username]);
       if (existingUser.rows.length > 0) {
         skippedCount += 1;
@@ -808,25 +672,17 @@ async function importStudentsExcel(req, res) {
   }
 }
 
-/**
- * GET /api/admin/templates/books.xlsx
- * Generates and downloads an Excel template with 50 prefilled sample books.
- */
 function downloadBooksTemplate(req, res) {
   const wb = xlsx.utils.book_new();
-  const ws = xlsx.utils.json_to_sheet(SAMPLE_50_BOOKS);
+  const ws = xlsx.utils.json_to_sheet(SAMPLE_BOOKS);
   xlsx.utils.book_append_sheet(wb, ws, 'Books_Template');
 
   const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
-  res.setHeader('Content-Disposition', 'attachment; filename="books_import_template_50.xlsx"');
+  res.setHeader('Content-Disposition', 'attachment; filename="books_import_template.xlsx"');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   return res.status(200).send(buffer);
 }
 
-/**
- * GET /api/admin/templates/students.xlsx
- * Generates and downloads a clean Excel template with sample users (student and admin roles).
- */
 function downloadStudentsTemplate(req, res) {
   const sampleUsers = [
     {

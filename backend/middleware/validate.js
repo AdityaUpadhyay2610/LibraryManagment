@@ -1,12 +1,5 @@
-// backend/middleware/validate.js
-// Input validation middlewares for request bodies and parameters.
-// Ensures uniform HTTP 400 responses with descriptive { message } on invalid input.
-
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * Validates login request payload.
- */
 function validateLogin(req, res, next) {
   const { username, password } = req.body || {};
   if (!username || typeof username !== 'string' || !username.trim()) {
@@ -18,9 +11,6 @@ function validateLogin(req, res, next) {
   next();
 }
 
-/**
- * Validates admin registration request payload.
- */
 function validateRegisterAdmin(req, res, next) {
   const { username, password, fullName } = req.body || {};
   if (!username || typeof username !== 'string' || !username.trim()) {
@@ -35,9 +25,6 @@ function validateRegisterAdmin(req, res, next) {
   next();
 }
 
-/**
- * Validates adding a student payload.
- */
 function validateAddStudent(req, res, next) {
   const { username, password, fullName, email } = req.body || {};
   if (!username || typeof username !== 'string' || !username.trim()) {
@@ -55,9 +42,6 @@ function validateAddStudent(req, res, next) {
   next();
 }
 
-/**
- * Validates adding or updating a book.
- */
 function validateBook(req, res, next) {
   const { title, copies } = req.body || {};
   if (!title || typeof title !== 'string' || !title.trim()) {
@@ -69,9 +53,6 @@ function validateBook(req, res, next) {
   next();
 }
 
-/**
- * Validates book issuing input.
- */
 function validateIssueBook(req, res, next) {
   const { studentUsername, bookTitle, bookId } = req.body || {};
   if (!studentUsername || typeof studentUsername !== 'string' || !studentUsername.trim()) {
@@ -83,9 +64,6 @@ function validateIssueBook(req, res, next) {
   next();
 }
 
-/**
- * Validates change password payload.
- */
 function validateChangePassword(req, res, next) {
   const { oldPassword, newPassword } = req.body || {};
   if (!oldPassword || typeof oldPassword !== 'string') {
@@ -97,10 +75,6 @@ function validateChangePassword(req, res, next) {
   next();
 }
 
-/**
- * Middleware factory to validate that an ID parameter in the URL is a positive integer.
- * @param {string} paramName - e.g. 'id', 'transId', 'bookId'
- */
 function validateNumericId(paramName) {
   return function (req, res, next) {
     const value = req.params[paramName];

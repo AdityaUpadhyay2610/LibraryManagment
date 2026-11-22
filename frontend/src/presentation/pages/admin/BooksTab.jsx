@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAdmin } from '../../../application/hooks/useAdmin';
 import { BookCover } from '../../components/BookCover';
+import { BulkImportCard } from '../../components/BulkImportCard';
+import { AddBookForm } from './AddBookForm';
 import { DEFAULT_NEW_BOOK } from '../../../domain/constants';
 import { adminApi } from '../../../services/api';
 
@@ -91,99 +93,22 @@ export function BooksTab() {
             </button>
           </div>
 
-          {/* Compact Bulk Import Card */}
+          {/* Bulk Import Card */}
           {showImportModal && (
-            <div
-              className="glass-card mb-4 rounded-xl p-3 shadow-md transition-all"
-              style={{
-                border: '1.5px solid var(--border-active)',
-                background: 'var(--table-bg)',
-              }}
-            >
-              <div className="flex flex-wrap justify-between items-center gap-2 pb-2 mb-2 border-b" style={{ borderColor: 'var(--border-color)' }}>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-base">📚</span>
-                  <span className="font-semibold text-xs text-main">
-                    Bulk Book Importer (50+ Books)
-                  </span>
-                </div>
-
-                <a
-                  href={adminApi.downloadBooksTemplateUrl()}
-                  download="books_import_template_50.xlsx"
-                  className="btn btn-secondary btn-sm"
-                  style={{ textDecoration: 'none', padding: '4px 10px', fontSize: '0.75rem' }}
-                >
-                  📄 Download 50-Book Template (.xlsx)
-                </a>
-              </div>
-
-              <form onSubmit={handleFileUpload}>
-                <div
-                  className="flex flex-col sm:flex-row items-center gap-2 p-2 rounded-lg border border-dashed"
-                  style={{
-                    borderColor: importFile ? 'var(--primary)' : 'var(--border-color)',
-                    background: 'var(--input-bg)',
-                  }}
-                >
-                  <input
-                    type="file"
-                    id="book-file-input"
-                    accept=".xlsx, .xls, .csv"
-                    className="hidden"
-                    onChange={(e) => setImportFile(e.target.files[0] || null)}
-                  />
-                  <label
-                    htmlFor="book-file-input"
-                    className="btn btn-secondary btn-sm cursor-pointer whitespace-nowrap"
-                    style={{ padding: '5px 12px', fontSize: '0.75rem' }}
-                  >
-                    📁 {importFile ? 'Change File' : 'Choose Spreadsheet'}
-                  </label>
-
-                  <div className="text-xs flex-1 truncate px-1" style={{ color: importFile ? 'var(--text-main)' : 'var(--text-muted)' }}>
-                    {importFile ? (
-                      <span className="font-semibold text-primary">
-                        ✓ {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
-                      </span>
-                    ) : (
-                      'Supports .xlsx, .xls, .csv (Columns: Title, Author, Copies, ISBN, Category)'
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={!importFile || uploading}
-                    className="btn btn-primary btn-sm whitespace-nowrap"
-                    style={{ padding: '5px 14px', fontSize: '0.75rem' }}
-                  >
-                    {uploading ? '⏳ Importing...' : '🚀 Upload & Import'}
-                  </button>
-                </div>
-              </form>
-
-              {importResult && (
-                <div
-                  className="mt-2.5 p-2.5 rounded-lg text-xs"
-                  style={{
-                    background: importResult.error ? 'rgba(225, 29, 72, 0.08)' : 'rgba(16, 185, 129, 0.1)',
-                    border: `1px solid ${importResult.error ? 'var(--accent-crimson)' : 'var(--secondary)'}`,
-                    color: 'var(--text-main)',
-                  }}
-                >
-                  {importResult.error ? (
-                    <div className="font-semibold text-danger">⚠️ {importResult.error}</div>
-                  ) : (
-                    <div>
-                      <div className="font-bold text-success">✅ {importResult.message}</div>
-                      <div className="mt-0.5 text-muted">
-                        New: <strong>{importResult.importedCount}</strong> | Updated: <strong>{importResult.updatedCount}</strong> | Total: {importResult.totalRows}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <BulkImportCard
+              icon="📚"
+              title="Bulk Book Importer"
+              templateUrl={adminApi.downloadBooksTemplateUrl()}
+              templateName="books_import_template.xlsx"
+              fileInputId="book-file-input"
+              importFile={importFile}
+              setImportFile={setImportFile}
+              uploading={uploading}
+              onUpload={handleFileUpload}
+              importResult={importResult}
+              placeholder="Supports .xlsx, .xls, .csv (Columns: Title, Author, Copies, ISBN, Category)"
+              uploadButtonText="Upload & Import"
+            />
           )}
 
           {/* Compact Search Filter */}
@@ -279,55 +204,11 @@ export function BooksTab() {
       </div>
       
       <aside className="side-col">
-        <div className="glass-panel sticky-form" style={{ padding: '20px' }}>
-          <h3 style={{ fontSize: '1.15rem' }}>Add Single Book</h3>
-          <p className="text-xs text-muted mt-0.5">Quickly register one book manually.</p>
-          <form onSubmit={handleSubmit} className="mt-3">
-            <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label text-xs">Book Title</label>
-              <input 
-                type="text" 
-                className="form-input text-xs" 
-                placeholder="e.g. Advanced Java Concepts"
-                value={newBook.title}
-                onChange={e => setNewBook({ ...newBook, title: e.target.value })}
-              />
-            </div>
-            <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label text-xs">Author Name</label>
-              <input 
-                type="text" 
-                className="form-input text-xs" 
-                placeholder="e.g. Herbert Schildt"
-                value={newBook.author}
-                onChange={e => setNewBook({ ...newBook, author: e.target.value })}
-              />
-            </div>
-            <div className="form-group" style={{ marginBottom: '14px' }}>
-              <label className="form-label text-xs">Category</label>
-              <input 
-                type="text" 
-                className="form-input text-xs" 
-                placeholder="e.g. Computer Science"
-                value={newBook.category || ''}
-                onChange={e => setNewBook({ ...newBook, category: e.target.value })}
-              />
-            </div>
-            <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label className="form-label text-xs">Total Copies</label>
-              <input 
-                type="number" 
-                className="form-input text-xs" 
-                min="1"
-                value={newBook.copies}
-                onChange={e => setNewBook({ ...newBook, copies: parseInt(e.target.value) || 1 })}
-              />
-            </div>
-            <button type="submit" className="btn btn-primary w-full" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-              Add to Catalog
-            </button>
-          </form>
-        </div>
+        <AddBookForm
+          newBook={newBook}
+          setNewBook={setNewBook}
+          onSubmit={handleSubmit}
+        />
       </aside>
     </div>
   );

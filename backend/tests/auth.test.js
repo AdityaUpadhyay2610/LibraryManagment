@@ -1,6 +1,3 @@
-// backend/tests/auth.test.js
-// Tests for authentication, authorization middleware, and session checks.
-
 const express = require('express');
 const request = require('supertest');
 const { requireLogin, requireRole } = require('../middleware/auth');

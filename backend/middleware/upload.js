@@ -1,17 +1,13 @@
-// backend/middleware/upload.js
-// Handles file uploads in-memory using multer for Excel and CSV imports.
-
 const path = require('path');
 const multer = require('multer');
 
-// Configure in-memory storage (no temporary files stored on disk)
+// in-memory storage, no temp files on disk
 const storage = multer.memoryStorage();
 
-// Accept Excel and CSV spreadsheets up to 15MB
 const uploadSpreadsheet = multer({
   storage,
   limits: {
-    fileSize: 15 * 1024 * 1024, // 15 Megabytes
+    fileSize: 15 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();

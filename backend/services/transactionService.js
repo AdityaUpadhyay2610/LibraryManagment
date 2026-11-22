@@ -1,17 +1,8 @@
-// backend/services/transactionService.js
-// Handles book issuing, returning, and renewals inside PostgreSQL database transactions.
-// Uses row locks (SELECT ... FOR UPDATE) to prevent race conditions (e.g. concurrent issues of the last copy).
-
 const { pool } = require('../db/pool');
 const config = require('../config');
 const fineService = require('./fineService');
 const emailService = require('./emailService');
 
-/**
- * Format a Date object to "dd-MMM-yyyy HH:mm" for user-friendly emails.
- * @param {Date} date
- * @returns {string}
- */
 function formatDate(date) {
   const d = new Date(date);
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -23,21 +14,12 @@ function formatDate(date) {
   return `${day}-${month}-${year} ${hours}:${minutes}`;
 }
 
-/**
- * Issues a book to a student.
- * Performs checks: student validity, unpaid fines, max active loans limit, duplicate active loan, and stock availability.
- * @param {Object} params
- * @param {string} [params.studentUsername] - Student username
- * @param {number} [params.studentId] - Student user ID
- * @param {string} [params.bookTitle] - Book title
- * @param {number} [params.bookId] - Book ID
- */
 async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // 1. Locate student
+    // find student
     let studentResult;
     if (studentId) {
       studentResult = await client.query('SELECT * FROM app_user WHERE id = $1', [studentId]);
@@ -52,7 +34,7 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
     }
     const student = studentResult.rows[0];
 
-    // 2. Check for unpaid fines
+    // check unpaid fines
     const fineCheck = await client.query(
       `SELECT COALESCE(SUM(fine), 0) AS total_unpaid
        FROM "transaction"
@@ -66,7 +48,7 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
       throw err;
     }
 
-    // 3. Check active loan limit (max 3 books by default)
+    // check active loan limit
     const activeLoansCheck = await client.query(
       `SELECT COUNT(*) AS active_count
        FROM "transaction"
@@ -80,7 +62,7 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
       throw err;
     }
 
-    // 4. Locate and LOCK book row to prevent race conditions
+    // lock book row to avoid concurrent issue race conditions
     let bookResult;
     if (bookId) {
       bookResult = await client.query('SELECT * FROM book WHERE id = $1 FOR UPDATE', [bookId]);
@@ -95,7 +77,7 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
     }
     const book = bookResult.rows[0];
 
-    // 5. Prevent duplicate borrowing of the same book
+    // cannot borrow same book twice concurrently
     const duplicateCheck = await client.query(
       `SELECT id FROM "transaction"
        WHERE student_id = $1 AND book_id = $2 AND return_date IS NULL`,
@@ -107,19 +89,16 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
       throw err;
     }
 
-    // 6. Check stock availability
     if (book.copies <= 0) {
       const err = new Error('No copies of this book are available');
       err.status = 400;
       throw err;
     }
 
-    // 7. Calculate issue date and due date (+7 days)
     const issueDate = new Date();
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + config.LOAN_DAYS);
 
-    // 8. Insert new transaction record
     const insertTransResult = await client.query(
       `INSERT INTO "transaction" (student_id, book_id, issue_date, due_date, fine, fine_paid, renew_count)
        VALUES ($1, $2, $3, $4, 0, false, 0)
@@ -128,13 +107,12 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
     );
     const newTransaction = insertTransResult.rows[0];
 
-    // 9. Decrement available book copies
     await client.query(
       'UPDATE book SET copies = copies - 1 WHERE id = $1',
       [book.id]
     );
 
-    // 10. If student had an active reservation for this book, mark it fulfilled
+    // mark any waiting reservation as fulfilled
     await client.query(
       `UPDATE reservation SET status = 'FULFILLED'
        WHERE student_id = $1 AND book_id = $2 AND status IN ('WAITING', 'READY')`,
@@ -143,24 +121,16 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
 
     await client.query('COMMIT');
 
-    // 11. Send notification email asynchronously (safe, non-blocking)
+    // send confirmation email
     if (student.email) {
-      const subject = `📚 Library Notification: Book Issued - ${book.title}`;
+      const subject = `Library Notification: Book Issued - ${book.title}`;
       const body = `Dear ${student.full_name || student.username},\n\n` +
-        `We are pleased to inform you that the following book has been successfully issued to your library account. Please find the transaction details below:\n\n` +
-        `📖 BOOK DETAILS\n` +
-        `-----------------------------------------------------\n` +
-        `Title         : ${book.title}\n` +
-        `Author        : ${book.author || 'N/A'}\n` +
-        `Issue Date    : ${formatDate(issueDate)}\n` +
-        `Due Date      : ${formatDate(dueDate)}\n` +
-        `-----------------------------------------------------\n\n` +
-        `⚠️ TERMS & CONDITIONS\n` +
-        `1. Please ensure the book is returned on or before the Due Date mentioned above.\n` +
-        `2. Late Returns will incur a fine of ₹${config.FINE_PER_DAY.toFixed(2)} per day.\n` +
-        `3. Please maintain the book in good condition to avoid damage charges.\n\n` +
-        `Thank you for using our library services.\n\n` +
-        `Best Regards,\n` +
+        `The following book has been issued to your library account:\n\n` +
+        `Title: ${book.title}\n` +
+        `Author: ${book.author || 'N/A'}\n` +
+        `Issue Date: ${formatDate(issueDate)}\n` +
+        `Due Date: ${formatDate(dueDate)}\n\n` +
+        `Please return the book on or before the due date to avoid late fines.\n\n` +
         `Library Management Team`;
 
       emailService.sendEmail(student.email, subject, body).catch(() => {});
@@ -193,19 +163,12 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
   }
 }
 
-/**
- * Returns a borrowed book.
- * Computes overdue fine, restores book copies, and notifies next student on the waitlist.
- * @param {number} transId - Transaction ID
- * @param {number} [requestingUserId] - ID of user making request (for student self-return check)
- * @param {boolean} [isAdmin=false] - Whether the caller is an Admin
- */
 async function returnBook(transId, requestingUserId = null, isAdmin = false) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // 1. Lock transaction row
+    // lock transaction row
     const transResult = await client.query(
       `SELECT t.*, u.username, u.full_name, u.email, b.title, b.author
        FROM "transaction" t
@@ -223,14 +186,13 @@ async function returnBook(transId, requestingUserId = null, isAdmin = false) {
     }
     const t = transResult.rows[0];
 
-    // 2. Ownership check for student return
+    // students can only return their own books
     if (!isAdmin && requestingUserId && t.student_id !== requestingUserId) {
       const err = new Error('Unauthorized to return this book transaction');
       err.status = 403;
       throw err;
     }
 
-    // 3. Check if already returned
     if (t.return_date) {
       const err = new Error('Book already returned');
       err.status = 400;
@@ -240,7 +202,6 @@ async function returnBook(transId, requestingUserId = null, isAdmin = false) {
     const returnDate = new Date();
     const { fine } = fineService.calculateFine(t.due_date, returnDate);
 
-    // 4. Update transaction
     await client.query(
       `UPDATE "transaction"
        SET return_date = $1, fine = $2, fine_paid = ($2 = 0)
@@ -248,14 +209,13 @@ async function returnBook(transId, requestingUserId = null, isAdmin = false) {
       [returnDate, fine, transId]
     );
 
-    // 5. Increment book copies (with lock)
     const bookResult = await client.query(
       'UPDATE book SET copies = copies + 1 WHERE id = $1 RETURNING *',
       [t.book_id]
     );
     const updatedBook = bookResult.rows[0];
 
-    // 6. Check waitlist (reservations) for this book
+    // check if someone is waiting in reservations
     const reservationResult = await client.query(
       `SELECT r.*, u.full_name, u.email
        FROM reservation r
@@ -274,13 +234,12 @@ async function returnBook(transId, requestingUserId = null, isAdmin = false) {
         [nextReservation.id]
       );
 
-      // Email the next student on the waitlist
       if (nextReservation.email) {
-        const subject = `🎉 Good news! Your reserved book "${t.title}" is ready!`;
+        const subject = `Your reserved book "${t.title}" is ready`;
         const body = `Dear ${nextReservation.full_name},\n\n` +
-          `A copy of "${t.title}" has just been returned to the library and is now reserved for you!\n` +
-          `Please visit the library counter to have it issued to your account.\n\n` +
-          `Best Regards,\nLibrary Management Team`;
+          `A copy of "${t.title}" has been returned to the library and is now reserved for you.\n` +
+          `Please visit the library counter to have it issued.\n\n` +
+          `Library Management Team`;
 
         emailService.sendEmail(nextReservation.email, subject, body).catch(() => {});
       }
@@ -302,18 +261,12 @@ async function returnBook(transId, requestingUserId = null, isAdmin = false) {
   }
 }
 
-/**
- * Renews a borrowed book by extending its due date by LOAN_DAYS.
- * Allowed up to 2 times, provided it is not overdue and no other student is waiting on a reservation.
- * @param {number} transId - Transaction ID
- * @param {number} studentId - Student user ID
- */
 async function renewBook(transId, studentId) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // 1. Lock transaction row
+    // lock transaction row
     const transResult = await client.query(
       `SELECT t.*, b.title
        FROM "transaction" t
@@ -330,35 +283,32 @@ async function renewBook(transId, studentId) {
     }
     const t = transResult.rows[0];
 
-    // 2. Ownership check
     if (t.student_id !== studentId) {
       const err = new Error('You can only renew your own borrowed books.');
       err.status = 403;
       throw err;
     }
 
-    // 3. Check already returned
     if (t.return_date) {
       const err = new Error('Cannot renew a book that has already been returned.');
       err.status = 400;
       throw err;
     }
 
-    // 4. Overdue check: cannot renew if already past due date
     if (new Date(t.due_date).getTime() < Date.now()) {
       const err = new Error('Cannot renew an overdue book. Please return the book and clear any late fees.');
       err.status = 400;
       throw err;
     }
 
-    // 5. Renewal limit check (max 2 renewals)
+    // max 2 renewals
     if (t.renew_count >= 2) {
       const err = new Error('Renewal limit reached: You can renew a book at most 2 times.');
       err.status = 400;
       throw err;
     }
 
-    // 6. Reservation waitlist check: cannot renew if someone is waiting
+    // cannot renew if waitlist is active
     const reservationCheck = await client.query(
       `SELECT id FROM reservation
        WHERE book_id = $1 AND status = 'WAITING'`,
@@ -370,7 +320,6 @@ async function renewBook(transId, studentId) {
       throw err;
     }
 
-    // 7. Extend due date by LOAN_DAYS
     const currentDue = new Date(t.due_date);
     const newDueDate = new Date(currentDue.getTime() + config.LOAN_DAYS * 24 * 60 * 60 * 1000);
     const newRenewCount = t.renew_count + 1;

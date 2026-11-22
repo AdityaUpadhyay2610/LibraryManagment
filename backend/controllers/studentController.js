@@ -1,26 +1,16 @@
-// backend/controllers/studentController.js
-// Handles student portal actions: personal dashboard, book returns, renewals,
-// book waitlist reservations, fine status, and borrowing history.
-
 const { pool } = require('../db/pool');
 const transactionService = require('../services/transactionService');
 const { sanitizeUser } = require('./authController');
 
-/**
- * GET /api/student/dashboard
- * Returns student profile, active borrowed books, and book catalog.
- */
 async function dashboard(req, res) {
   const studentId = req.session.user.id;
 
-  // 1. Fetch sanitized user
   const userResult = await pool.query('SELECT * FROM app_user WHERE id = $1', [studentId]);
   if (userResult.rows.length === 0) {
     return res.status(401).json({ message: 'User session not found' });
   }
   const user = sanitizeUser(userResult.rows[0]);
 
-  // 2. Fetch student's books (active transactions)
   const myTransResult = await pool.query(`
     SELECT 
       t.id, t.issue_date AS "issueDate", t.due_date AS "dueDate", t.return_date AS "returnDate",
@@ -52,7 +42,6 @@ async function dashboard(req, res) {
     },
   }));
 
-  // 3. Fetch catalog of all books
   const catalogResult = await pool.query(`
     SELECT id, title, author, isbn, category, copies, total_copies AS "totalCopies", image_url AS "imageUrl"
     FROM book
@@ -67,10 +56,6 @@ async function dashboard(req, res) {
   });
 }
 
-/**
- * POST /api/student/return-book/:transId
- * Allows a student to return their own borrowed book.
- */
 async function returnBook(req, res) {
   const transId = parseInt(req.params.transId, 10);
   const studentId = req.session.user.id;
@@ -83,10 +68,6 @@ async function returnBook(req, res) {
   });
 }
 
-/**
- * POST /api/student/renew/:transId
- * Renews an active book loan, extending due date by 7 days.
- */
 async function renewBook(req, res) {
   const transId = parseInt(req.params.transId, 10);
   const studentId = req.session.user.id;
@@ -95,10 +76,6 @@ async function renewBook(req, res) {
   return res.status(200).json(result);
 }
 
-/**
- * POST /api/student/reserve/:bookId
- * Places a waitlist reservation for a book that is currently out of stock.
- */
 async function reserveBook(req, res) {
   const bookId = parseInt(req.params.bookId, 10);
   const studentId = req.session.user.id;
@@ -110,14 +87,14 @@ async function reserveBook(req, res) {
 
   const book = bookCheck.rows[0];
 
-  // If copies are available, advise borrowing directly
+  // only allow reservation when out of stock
   if (book.copies > 0) {
     return res.status(400).json({
       message: 'Copies are currently available in the library! You can borrow it directly without placing a reservation.',
     });
   }
 
-  // Check if student already has a pending reservation
+  // check if student already has a pending reservation
   const existingReservation = await pool.query(
     'SELECT id FROM reservation WHERE student_id = $1 AND book_id = $2 AND status IN (\'WAITING\', \'READY\')',
     [studentId, bookId]
@@ -126,7 +103,7 @@ async function reserveBook(req, res) {
     return res.status(400).json({ message: 'You already have an active reservation for this book.' });
   }
 
-  // Check if student currently holds a copy of this book
+  // check if student currently holds a copy
   const currentLoan = await pool.query(
     'SELECT id FROM "transaction" WHERE student_id = $1 AND book_id = $2 AND return_date IS NULL',
     [studentId, bookId]
@@ -148,10 +125,6 @@ async function reserveBook(req, res) {
   });
 }
 
-/**
- * DELETE /api/student/reserve/:id
- * Cancels a student's pending reservation.
- */
 async function cancelReservation(req, res) {
   const reservationId = parseInt(req.params.id, 10);
   const studentId = req.session.user.id;
@@ -172,10 +145,6 @@ async function cancelReservation(req, res) {
   return res.status(200).json({ message: 'Reservation cancelled successfully' });
 }
 
-/**
- * GET /api/student/reservations
- * Lists all active and past reservations for the logged-in student.
- */
 async function getMyReservations(req, res) {
   const studentId = req.session.user.id;
   const result = await pool.query(`
@@ -190,10 +159,6 @@ async function getMyReservations(req, res) {
   return res.status(200).json(result.rows);
 }
 
-/**
- * GET /api/student/fines
- * Retrieves the total unpaid fine amount and breakdown for the logged-in student.
- */
 async function getMyFines(req, res) {
   const studentId = req.session.user.id;
   const result = await pool.query(`
@@ -216,10 +181,6 @@ async function getMyFines(req, res) {
   });
 }
 
-/**
- * GET /api/student/history
- * Complete borrowing history for the student.
- */
 async function getMyHistory(req, res) {
   const studentId = req.session.user.id;
   const result = await pool.query(`

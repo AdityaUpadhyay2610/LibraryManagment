@@ -1,6 +1,3 @@
-// backend/db/seed.js
-// Runs the database schema and seeds initial data (Admin, Student, Books) if tables are empty.
-
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -9,42 +6,42 @@ const { pool } = require('./pool');
 async function runSeed() {
   const client = await pool.connect();
   try {
-    console.log('--- Checking database connection and schema... ---');
+    console.log('Checking database connection and schema...');
     
-    // Read and execute schema.sql
+    // read and apply schema.sql
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
     await client.query(schemaSql);
-    console.log('--- Schema verified / updated successfully ---');
+    console.log('Schema ready');
 
-    // Check if the default admin user already exists
+    // check if admin user exists
     const checkUser = await client.query(
       'SELECT id FROM app_user WHERE username = $1',
       ['admin_user']
     );
 
     if (checkUser.rows.length === 0) {
-      console.log('--- Database is empty. Seeding initial data... ---');
+      console.log('Seeding initial data...');
 
-      // 1. Create Default Admin User
+      // default admin
       const adminPasswordHash = await bcrypt.hash('admin123', 10);
       await client.query(
         `INSERT INTO app_user (username, password, role, full_name, branch, academic_year, email)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         ['admin_user', adminPasswordHash, 'ROLE_ADMIN', 'Administrator', 'N/A', 'N/A', 'admin@library.com']
       );
-      console.log('✓ Admin user created: admin_user / admin123');
+      console.log('Created admin: admin_user / admin123');
 
-      // 2. Create Default Student User (Rahul)
+      // default student
       const studentPasswordHash = await bcrypt.hash('rahul123', 10);
       await client.query(
         `INSERT INTO app_user (username, password, role, full_name, branch, academic_year, email)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         ['student_rahul', studentPasswordHash, 'ROLE_STUDENT', 'Rahul Sharma', 'CSE', '3rd Year', 'rahul@student.edu']
       );
-      console.log('✓ Student user created: student_rahul / rahul123');
+      console.log('Created student: student_rahul / rahul123');
 
-      // 3. Create Default Books
+      // sample books
       await client.query(
         `INSERT INTO book (title, author, isbn, category, copies, total_copies, image_url)
          VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -72,14 +69,13 @@ async function runSeed() {
           'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80'
         ]
       );
-      console.log('✓ Seed books added: "Java Programming" (5 copies), "Spring Boot in Action" (2 copies)');
-
-      console.log('--- Initial seed completed successfully! ---');
+      console.log('Added initial books');
+      console.log('Initial seed complete');
     } else {
-      console.log('--- Database already contains data. Skipping initial seed. ---');
+      console.log('Database already has data. Skipping seed.');
     }
   } catch (err) {
-    console.error('[SEED ERROR] Failed to initialize database:', err);
+    console.error('Failed to initialize database:', err);
     process.exit(1);
   } finally {
     client.release();

@@ -1,7 +1,4 @@
--- backend/db/schema.sql
--- Database schema for Library Management System in PostgreSQL
-
--- 1. Table: app_user (for Admin and Student accounts)
+-- users (admin and student accounts)
 CREATE TABLE IF NOT EXISTS app_user (
   id SERIAL PRIMARY KEY,
   username VARCHAR(255) UNIQUE NOT NULL,
@@ -16,7 +13,7 @@ CREATE TABLE IF NOT EXISTS app_user (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Table: book (inventory of books)
+-- book catalog
 CREATE TABLE IF NOT EXISTS book (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -29,7 +26,7 @@ CREATE TABLE IF NOT EXISTS book (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Table: transaction (issue and return records)
+-- issue and return records
 CREATE TABLE IF NOT EXISTS "transaction" (
   id SERIAL PRIMARY KEY,
   student_id INT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
@@ -42,7 +39,7 @@ CREATE TABLE IF NOT EXISTS "transaction" (
   renew_count INT DEFAULT 0
 );
 
--- 4. Table: reservation (waitlist when all copies of a book are borrowed)
+-- reservations waitlist
 CREATE TABLE IF NOT EXISTS reservation (
   id SERIAL PRIMARY KEY,
   student_id INT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
@@ -51,7 +48,7 @@ CREATE TABLE IF NOT EXISTS reservation (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Table: session (required by connect-pg-simple for persistent Express sessions)
+-- session store for connect-pg-simple
 CREATE TABLE IF NOT EXISTS "session" (
   "sid" VARCHAR NOT NULL COLLATE "default",
   "sess" JSON NOT NULL,
@@ -68,7 +65,7 @@ BEGIN
   END IF;
 END $$;
 
--- Indexes for performance
+-- indexes
 CREATE INDEX IF NOT EXISTS idx_transaction_student_id ON "transaction"(student_id);
 CREATE INDEX IF NOT EXISTS idx_transaction_book_id ON "transaction"(book_id);
 CREATE INDEX IF NOT EXISTS idx_transaction_return_date ON "transaction"(return_date);

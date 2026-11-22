@@ -1,9 +1,4 @@
-// Authentication and Authorization middleware for Express.
-// Supports both session cookies and Authorization: Bearer <token> fallback for cross-domain hosts (Vercel).
-
-/**
- * Helper to resolve user from session cookie or Authorization header
- */
+// check session cookie first, then bearer token header
 function getAuthenticatedUser(req, callback) {
   if (req.session && req.session.user) {
     return callback(null, req.session.user);
@@ -27,10 +22,6 @@ function getAuthenticatedUser(req, callback) {
   return callback(null, null);
 }
 
-/**
- * Middleware: Requires the user to have an active logged-in session.
- * If not authenticated, returns 401 Unauthorized.
- */
 function requireLogin(req, res, next) {
   getAuthenticatedUser(req, (err, user) => {
     if (user) {
@@ -42,10 +33,6 @@ function requireLogin(req, res, next) {
   });
 }
 
-/**
- * Middleware Factory: Requires the logged-in user to have a specific role.
- * Example usage: requireRole('ADMIN') or requireRole('STUDENT')
- */
 function requireRole(expectedRole) {
   return function (req, res, next) {
     getAuthenticatedUser(req, (err, user) => {
