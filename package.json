@@ -4,7 +4,7 @@
   "private": true,
   "description": "Production Library Management System - Node.js, Express, PostgreSQL & React",
   "scripts": {
-    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
+    "build": "npm install --include=dev --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
     "start": "node backend/server.js",
     "db:init": "node backend/db/seed.js",
     "test": "npm test --prefix backend"
