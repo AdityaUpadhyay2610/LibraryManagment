@@ -78,11 +78,11 @@ A web application for managing a library. Administrators can manage the book cat
 When the database is initialized using `npm run db:init`, the following accounts are created:
 
 - Administrator:
-  - Username: `admin_user`
-  - Password: `admin123`
+  - Username: `YOURADMINID`
+  - Password: `YOURPASSWORD`
 - Student:
-  - Username: `student_rahul`
-  - Password: `rahul123`
+  - Username: `YOURSTUDENTID`
+  - Password: `YOURPASSWORD`
 
 ## Running Tests
 
