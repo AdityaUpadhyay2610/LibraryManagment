@@ -26,14 +26,27 @@ const notificationService = require('./services/notificationService');
 
 const app = express();
 
+// Trust reverse proxies (Render, Vercel, Railway, AWS ALB) for secure cookies & client IP
+app.set('trust proxy', 1);
+
 // 1. Security HTTP headers
 app.use(helmet({
-  contentSecurityPolicy: false, // Allows flexible integration with Vite frontend
+  contentSecurityPolicy: false,
 }));
 
-// 2. Cross-Origin Resource Sharing (CORS) configured for frontend
+// 2. Cross-Origin Resource Sharing (CORS) configured for frontend & Vercel
+const allowedOrigins = (config.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim());
+
 app.use(cors({
-  origin: config.CLIENT_ORIGIN,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*') || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -50,6 +63,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 5. Persistent Session Storage via PostgreSQL (connect-pg-simple)
+const isCrossSite = config.NODE_ENV === 'production' && config.CLIENT_ORIGIN && !config.CLIENT_ORIGIN.includes('localhost');
+
 app.use(
   session({
     store: new pgSession({
@@ -60,10 +75,11 @@ app.use(
     secret: config.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: isCrossSite ? 'none' : 'lax',
       secure: config.NODE_ENV === 'production',
     },
   })
