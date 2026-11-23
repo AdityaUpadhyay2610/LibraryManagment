@@ -155,6 +155,11 @@ export const adminApi = {
 
 export const studentApi = {
   getDashboard: () => request('/student/dashboard', { method: 'GET' }),
+  rentBook: (bookId, rentalDays) =>
+    request('/student/rent-book', {
+      method: 'POST',
+      body: { bookId, rentalDays },
+    }),
   returnBook: (transId) => request(`/student/return-book/${transId}`, { method: 'POST' }),
   renewBook: (transId) => request(`/student/renew/${transId}`, { method: 'POST' }),
   reserveBook: (bookId) => request(`/student/reserve/${bookId}`, { method: 'POST' }),

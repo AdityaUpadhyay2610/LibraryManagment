@@ -83,6 +83,7 @@ router.get('/admin/export/transactions.csv', requireLogin, requireRole('ADMIN'),
 
 // student routes
 router.get('/student/dashboard', requireLogin, requireRole('STUDENT'), asyncHandler(studentController.dashboard));
+router.post('/student/rent-book', requireLogin, requireRole('STUDENT'), asyncHandler(studentController.rentBook));
 router.post('/student/return-book/:transId', requireLogin, requireRole('STUDENT'), validateNumericId('transId'), asyncHandler(studentController.returnBook));
 router.post('/student/renew/:transId', requireLogin, requireRole('STUDENT'), validateNumericId('transId'), asyncHandler(studentController.renewBook));
 router.post('/student/reserve/:bookId', requireLogin, requireRole('STUDENT'), validateNumericId('bookId'), asyncHandler(studentController.reserveBook));

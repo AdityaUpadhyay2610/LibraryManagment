@@ -56,15 +56,34 @@ async function dashboard(req, res) {
   });
 }
 
-async function returnBook(req, res) {
-  const transId = parseInt(req.params.transId, 10);
+async function rentBook(req, res) {
   const studentId = req.session.user.id;
+  const { bookId, rentalDays } = req.body;
 
-  const result = await transactionService.returnBook(transId, studentId, false);
+  if (!bookId) {
+    return res.status(400).json({ message: 'Book ID is required' });
+  }
+
+  const days = parseInt(rentalDays, 10) || 1;
+  if (days < 1 || days > 30) {
+    return res.status(400).json({ message: 'Rental duration must be between 1 and 30 days' });
+  }
+
+  const result = await transactionService.issueBook({
+    studentId,
+    bookId,
+    rentalDays: days,
+  });
 
   return res.status(200).json({
-    message: 'Book returned successfully',
-    fine: result.fine,
+    message: `Book rented for ${days} day(s). Return to the library admin before the due date.`,
+    transaction: result.transaction,
+  });
+}
+
+async function returnBook(req, res) {
+  return res.status(403).json({
+    message: 'Books must be returned directly to the library administrator at the desk.',
   });
 }
 
@@ -198,6 +217,7 @@ async function getMyHistory(req, res) {
 
 module.exports = {
   dashboard,
+  rentBook,
   returnBook,
   renewBook,
   reserveBook,

@@ -33,6 +33,18 @@ export function StudentProvider({ children }) {
     }
   }, [user, fetchStudentData]);
 
+  const rentBook = async (bookId, rentalDays) => {
+    try {
+      const res = await studentApi.rentBook(bookId, rentalDays);
+      showToast(res.message || 'Book rented successfully!');
+      await fetchStudentData();
+      return res;
+    } catch (err) {
+      showToast('Error renting book: ' + err.message, 'error');
+      throw err;
+    }
+  };
+
   const returnBook = async (transId) => {
     try {
       await studentApi.returnBook(transId);
@@ -63,6 +75,7 @@ export function StudentProvider({ children }) {
         studentData,
         loadingData,
         fetchStudentData,
+        rentBook,
         returnBook,
         renewBook,
       }}

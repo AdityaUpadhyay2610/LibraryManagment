@@ -14,7 +14,7 @@ function formatDate(date) {
   return `${day}-${month}-${year} ${hours}:${minutes}`;
 }
 
-async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
+async function issueBook({ studentUsername, studentId, bookTitle, bookId, rentalDays }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -97,7 +97,8 @@ async function issueBook({ studentUsername, studentId, bookTitle, bookId }) {
 
     const issueDate = new Date();
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + config.LOAN_DAYS);
+    const days = rentalDays ? parseInt(rentalDays, 10) : config.LOAN_DAYS;
+    dueDate.setDate(dueDate.getDate() + days);
 
     const insertTransResult = await client.query(
       `INSERT INTO "transaction" (student_id, book_id, issue_date, due_date, fine, fine_paid, renew_count)
